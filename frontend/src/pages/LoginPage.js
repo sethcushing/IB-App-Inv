@@ -60,7 +60,7 @@ const LoginPage = () => {
 
   const demoAccounts = [
     { name: 'Executive', email: 'exec@demo.com', role: 'admin', costCenters: [] },
-    { name: 'IT Manager', email: 'it@demo.com', role: 'manager', costCenters: ['650-it executive', '653-it applications-erp', '651-it infrastructure'] },
+    { name: 'IT Manager', email: 'it@demo.com', role: 'manager', costCenters: ['650-it executive', '651-it applications-crm', '652-it operations', '653-it applications-erp'] },
     { name: 'Analyst', email: 'analyst@demo.com', role: 'viewer', costCenters: ['650-it executive'] },
   ];
 

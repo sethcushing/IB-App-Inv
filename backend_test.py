@@ -12,274 +12,274 @@ class RoleBasedDashboardTester:
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
-        self.demo_accounts = [
-            {"email": "exec@demo.com", "password": "demo123", "name": "Executive", "role": "admin", "expected_apps": (300, 400), "can_edit": True},
-            {"email": "it@demo.com", "password": "demo123", "name": "IT Manager", "role": "manager", "expected_apps": (80, 120), "can_edit": True},
-            {"email": "analyst@demo.com", "password": "demo123", "name": "Analyst", "role": "viewer", "expected_apps": (40, 70), "can_edit": False}
-        ]
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
-        """Run a single API test"""
-        url = f"{self.base_url}/{endpoint}"
-        test_headers = {'Content-Type': 'application/json'}
-        if self.token:
-            test_headers['Authorization'] = f'Bearer {self.token}'
-        if headers:
-            test_headers.update(headers)
-
+    def log_test(self, name, success, details=""):
+        """Log test result"""
         self.tests_run += 1
-        print(f"\n🔍 Testing {name}...")
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name}")
+        else:
+            print(f"❌ {name} - {details}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details
+        })
+
+    def login_user(self, email, password, role_name):
+        """Login and get token for a user"""
+        print(f"\n🔐 Testing {role_name} login ({email})...")
         
         try:
-            if method == 'GET':
-                response = requests.get(url, headers=test_headers, timeout=30)
-            elif method == 'POST':
-                response = requests.post(url, json=data, headers=test_headers, timeout=30)
-            elif method == 'PUT':
-                response = requests.put(url, json=data, headers=test_headers, timeout=30)
-            elif method == 'DELETE':
-                response = requests.delete(url, headers=test_headers, timeout=30)
-
-            success = response.status_code == expected_status
-            if success:
-                self.tests_passed += 1
-                print(f"✅ Passed - Status: {response.status_code}")
-                self.test_results.append({"test": name, "status": "PASS", "details": f"Status: {response.status_code}"})
+            response = requests.post(f"{self.base_url}/auth/login", 
+                                   json={"email": email, "password": password})
+            
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get('access_token')
+                user_data = data.get('user', {})
+                
+                self.tokens[role_name] = token
+                self.log_test(f"{role_name} Login", True, f"Role: {user_data.get('role')}")
+                
+                # Get user profile with permissions
+                headers = {'Authorization': f'Bearer {token}'}
+                profile_res = requests.get(f"{self.base_url}/auth/me", headers=headers)
+                
+                if profile_res.status_code == 200:
+                    profile = profile_res.json()
+                    print(f"   Role: {profile.get('role')}")
+                    print(f"   Can Edit: {profile.get('can_edit')}")
+                    print(f"   Dashboard View: {profile.get('dashboard_view')}")
+                    print(f"   Assigned Cost Centers: {profile.get('assigned_cost_centers', [])}")
+                    return profile
+                else:
+                    self.log_test(f"{role_name} Profile Fetch", False, f"Status: {profile_res.status_code}")
+                    return None
             else:
-                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
-                print(f"   Response: {response.text[:200]}")
-                self.test_results.append({"test": name, "status": "FAIL", "details": f"Expected {expected_status}, got {response.status_code}"})
-
-            try:
-                return success, response.json() if response.text else {}
-            except:
-                return success, {"raw_response": response.text}
-
+                self.log_test(f"{role_name} Login", False, f"Status: {response.status_code}")
+                return None
+                
         except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
-            self.test_results.append({"test": name, "status": "ERROR", "details": str(e)})
-            return False, {}
+            self.log_test(f"{role_name} Login", False, str(e))
+            return None
 
-    def test_demo_login(self, account):
-        """Test login with demo account"""
-        success, response = self.run_test(
-            f"Login as {account['name']}",
-            "POST",
-            "auth/login",
-            200,
-            data={"email": account["email"], "password": account["password"]}
-        )
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            print(f"   Token obtained for {account['name']}")
-            return True, response
-        return False, response
+    def test_applications_access(self, role_name, expected_range=None):
+        """Test applications endpoint for role-based filtering"""
+        if role_name not in self.tokens:
+            return False
+            
+        print(f"\n📊 Testing {role_name} applications access...")
+        
+        try:
+            headers = {'Authorization': f'Bearer {self.tokens[role_name]}'}
+            response = requests.get(f"{self.base_url}/applications", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                total_apps = data.get('total', 0)
+                apps = data.get('applications', [])
+                
+                print(f"   Total Apps: {total_apps}")
+                print(f"   Apps Returned: {len(apps)}")
+                
+                if expected_range:
+                    min_apps, max_apps = expected_range
+                    if min_apps <= total_apps <= max_apps:
+                        self.log_test(f"{role_name} App Count", True, f"{total_apps} apps (expected {min_apps}-{max_apps})")
+                    else:
+                        self.log_test(f"{role_name} App Count", False, f"{total_apps} apps (expected {min_apps}-{max_apps})")
+                else:
+                    self.log_test(f"{role_name} App Access", True, f"{total_apps} apps")
+                
+                # Check cost center filtering for non-admin roles
+                if role_name != "Executive" and apps:
+                    cost_centers = set()
+                    for app in apps[:10]:  # Check first 10 apps
+                        cc = app.get('cost_center_primary')
+                        if cc:
+                            cost_centers.add(cc)
+                    print(f"   Cost Centers in results: {list(cost_centers)[:5]}...")
+                
+                return total_apps
+            else:
+                self.log_test(f"{role_name} App Access", False, f"Status: {response.status_code}")
+                return 0
+                
+        except Exception as e:
+            self.log_test(f"{role_name} App Access", False, str(e))
+            return 0
 
-    def test_register_demo_account(self, account):
-        """Test registering demo account if login fails"""
-        success, response = self.run_test(
-            f"Register {account['name']}",
-            "POST",
-            "auth/register",
-            200,
-            data={
-                "email": account["email"], 
-                "password": account["password"],
-                "name": account["name"],
-                "role": account["role"]
-            }
-        )
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            return True, response
-        return False, response
-
-    def test_get_me(self):
-        """Test getting current user info"""
-        return self.run_test("Get current user", "GET", "auth/me", 200)
-
-    def test_seed_data(self):
-        """Test seeding sample data"""
-        return self.run_test("Seed sample data", "POST", "seed", 200)
-
-    def test_dashboard_kpis(self):
+    def test_dashboard_kpis(self, role_name):
         """Test dashboard KPIs endpoint"""
-        return self.run_test("Dashboard KPIs", "GET", "dashboard/kpis", 200)
+        if role_name not in self.tokens:
+            return False
+            
+        print(f"\n📈 Testing {role_name} dashboard KPIs...")
+        
+        try:
+            headers = {'Authorization': f'Bearer {self.tokens[role_name]}'}
+            response = requests.get(f"{self.base_url}/dashboard/kpis", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"   Total Apps: {data.get('total_apps', 0)}")
+                print(f"   Total Contract Spend: ${data.get('total_contract_spend', 0):,.0f}")
+                print(f"   Total Engaged Users: {data.get('total_engaged_users', 0):,}")
+                
+                self.log_test(f"{role_name} Dashboard KPIs", True)
+                return True
+            else:
+                self.log_test(f"{role_name} Dashboard KPIs", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test(f"{role_name} Dashboard KPIs", False, str(e))
+            return False
 
-    def test_dashboard_charts(self):
-        """Test dashboard chart endpoints"""
-        endpoints = [
-            "dashboard/spend-by-category",
-            "dashboard/apps-by-category", 
-            "dashboard/spend-by-cost-center",
-            "dashboard/users-by-category",
-            "dashboard/executive-summary"
+    def test_executive_summary(self, role_name):
+        """Test executive summary endpoint for role-specific content"""
+        if role_name not in self.tokens:
+            return False
+            
+        print(f"\n📋 Testing {role_name} executive summary...")
+        
+        try:
+            headers = {'Authorization': f'Bearer {self.tokens[role_name]}'}
+            response = requests.get(f"{self.base_url}/dashboard/executive-summary", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                summary = data.get('summary', '')
+                view_type = data.get('view_type', '')
+                
+                print(f"   View Type: {view_type}")
+                print(f"   Summary: {summary[:100]}...")
+                
+                # Check for role-specific content
+                role_keywords = {
+                    "Executive": ["Portfolio Overview", "Executive"],
+                    "IT Manager": ["IT Management", "Cost Centers"],
+                    "Analyst": ["Usage Analytics", "engagement"]
+                }
+                
+                expected_keywords = role_keywords.get(role_name, [])
+                found_keywords = [kw for kw in expected_keywords if kw.lower() in summary.lower()]
+                
+                if found_keywords:
+                    self.log_test(f"{role_name} Summary Content", True, f"Found: {found_keywords}")
+                else:
+                    self.log_test(f"{role_name} Summary Content", False, f"Missing keywords: {expected_keywords}")
+                
+                return True
+            else:
+                self.log_test(f"{role_name} Executive Summary", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test(f"{role_name} Executive Summary", False, str(e))
+            return False
+
+    def test_application_edit_permissions(self, role_name, should_allow_edit):
+        """Test application edit permissions"""
+        if role_name not in self.tokens:
+            return False
+            
+        print(f"\n✏️ Testing {role_name} edit permissions...")
+        
+        try:
+            headers = {'Authorization': f'Bearer {self.tokens[role_name]}'}
+            
+            # First get an application
+            apps_res = requests.get(f"{self.base_url}/applications?limit=1", headers=headers)
+            if apps_res.status_code != 200:
+                self.log_test(f"{role_name} Edit Test Setup", False, "Can't fetch apps")
+                return False
+                
+            apps = apps_res.json().get('applications', [])
+            if not apps:
+                self.log_test(f"{role_name} Edit Test Setup", False, "No apps available")
+                return False
+                
+            app_id = apps[0]['app_id']
+            
+            # Try to update the application
+            update_data = {"notes": f"Test update by {role_name} at {datetime.now().isoformat()}"}
+            response = requests.put(f"{self.base_url}/applications/{app_id}", 
+                                  json=update_data, headers=headers)
+            
+            if should_allow_edit:
+                if response.status_code == 200:
+                    self.log_test(f"{role_name} Edit Permission", True, "Edit allowed as expected")
+                else:
+                    self.log_test(f"{role_name} Edit Permission", False, f"Edit blocked (status: {response.status_code})")
+            else:
+                if response.status_code == 403:
+                    self.log_test(f"{role_name} Edit Permission", True, "Edit blocked as expected")
+                else:
+                    self.log_test(f"{role_name} Edit Permission", False, f"Edit allowed unexpectedly (status: {response.status_code})")
+            
+            return True
+                
+        except Exception as e:
+            self.log_test(f"{role_name} Edit Permission", False, str(e))
+            return False
+
+    def run_comprehensive_test(self):
+        """Run all tests for role-based dashboard"""
+        print("🚀 Starting Role-Based Dashboard Testing")
+        print("=" * 50)
+        
+        # Test credentials from the review request
+        test_users = [
+            {"email": "exec@demo.com", "password": "demo123", "role": "Executive", "expected_apps": (300, 400), "can_edit": True},
+            {"email": "it@demo.com", "password": "demo123", "role": "IT Manager", "expected_apps": (80, 120), "can_edit": True},
+            {"email": "analyst@demo.com", "password": "demo123", "role": "Analyst", "expected_apps": (40, 70), "can_edit": False}
         ]
         
-        results = []
-        for endpoint in endpoints:
-            success, response = self.run_test(f"Chart: {endpoint.split('/')[-1]}", "GET", endpoint, 200)
-            results.append((success, response))
-        return results
-
-    def test_applications_crud(self):
-        """Test applications CRUD operations"""
-        # Get applications
-        success, apps_response = self.run_test("Get applications", "GET", "applications", 200)
-        if not success:
-            return False
+        # Login all users
+        user_profiles = {}
+        for user in test_users:
+            profile = self.login_user(user["email"], user["password"], user["role"])
+            if profile:
+                user_profiles[user["role"]] = profile
         
-        # Create application
-        test_app = {
-            "title": "Test Application",
-            "vendor": "Test Vendor",
-            "functional_category": "Testing",
-            "deployment_type": "Cloud",
-            "contract_annual_spend": 50000,
-            "engaged_users": 100
-        }
+        # Test applications access for each role
+        for user in test_users:
+            if user["role"] in self.tokens:
+                self.test_applications_access(user["role"], user["expected_apps"])
         
-        success, create_response = self.run_test("Create application", "POST", "applications", 200, test_app)
-        if not success:
-            return False
+        # Test dashboard KPIs
+        for user in test_users:
+            if user["role"] in self.tokens:
+                self.test_dashboard_kpis(user["role"])
         
-        app_id = create_response.get('app_id')
-        if not app_id:
-            print("❌ No app_id returned from create")
-            return False
+        # Test executive summary
+        for user in test_users:
+            if user["role"] in self.tokens:
+                self.test_executive_summary(user["role"])
         
-        # Get specific application
-        success, get_response = self.run_test("Get specific application", "GET", f"applications/{app_id}", 200)
-        if not success:
-            return False
+        # Test edit permissions
+        for user in test_users:
+            if user["role"] in self.tokens:
+                self.test_application_edit_permissions(user["role"], user["can_edit"])
         
-        # Update application
-        update_data = {"deployment_type": "On-Prem"}
-        success, update_response = self.run_test("Update application", "PUT", f"applications/{app_id}", 200, update_data)
-        if not success:
-            return False
+        # Print summary
+        print("\n" + "=" * 50)
+        print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
         
-        # Delete application
-        success, delete_response = self.run_test("Delete application", "DELETE", f"applications/{app_id}", 200)
-        return success
-
-    def test_requests_workflow(self):
-        """Test requests workflow"""
-        # Get applications first
-        success, apps_response = self.run_test("Get apps for request test", "GET", "applications?limit=1", 200)
-        if not success or not apps_response.get('applications'):
-            print("❌ No applications found for request test")
-            return False
-        
-        app_id = apps_response['applications'][0]['app_id']
-        
-        # Create request
-        test_request = {
-            "app_id": app_id,
-            "request_type": "Usage Validation",
-            "to_role": "Product Owner",
-            "message": "Test request message",
-            "priority": "Medium"
-        }
-        
-        success, create_response = self.run_test("Create request", "POST", "requests", 200, test_request)
-        if not success:
-            return False
-        
-        request_id = create_response.get('request_id')
-        if not request_id:
-            print("❌ No request_id returned")
-            return False
-        
-        # Get requests
-        success, get_response = self.run_test("Get requests", "GET", "requests", 200)
-        if not success:
-            return False
-        
-        # Update request status
-        success, update_response = self.run_test("Update request", "PUT", f"requests/{request_id}", 200, {"status": "Sent"})
-        if not success:
-            return False
-        
-        # Send request
-        success, send_response = self.run_test("Send request", "POST", f"requests/{request_id}/send", 200)
-        return success
-
-    def test_filters_and_options(self):
-        """Test filter options endpoint"""
-        return self.run_test("Filter options", "GET", "filters/options", 200)
-
-    def test_high_spend_low_engagement(self):
-        """Test high spend low engagement endpoint"""
-        return self.run_test("High spend low engagement", "GET", "dashboard/high-spend-low-engagement?spend_threshold=10000&engagement_threshold=50", 200)
+        if self.tests_passed == self.tests_run:
+            print("🎉 All tests passed!")
+            return 0
+        else:
+            print("⚠️ Some tests failed. Check details above.")
+            return 1
 
 def main():
-    print("🚀 Starting Systems Inventory Dashboard API Tests")
-    print("=" * 60)
-    
-    tester = SystemsInventoryAPITester()
-    
-    # Test authentication with demo accounts
-    auth_success = False
-    for account in tester.demo_accounts:
-        print(f"\n📋 Testing authentication for {account['name']}")
-        
-        # Try login first
-        login_success, login_response = tester.test_demo_login(account)
-        if login_success:
-            auth_success = True
-            break
-        else:
-            # Try register if login fails
-            register_success, register_response = tester.test_register_demo_account(account)
-            if register_success:
-                auth_success = True
-                break
-    
-    if not auth_success:
-        print("❌ Authentication failed for all demo accounts")
-        return 1
-    
-    # Test user info
-    tester.test_get_me()
-    
-    # Test seeding data
-    print(f"\n📋 Testing data seeding")
-    tester.test_seed_data()
-    
-    # Test dashboard endpoints
-    print(f"\n📋 Testing dashboard endpoints")
-    tester.test_dashboard_kpis()
-    tester.test_dashboard_charts()
-    tester.test_high_spend_low_engagement()
-    
-    # Test applications CRUD
-    print(f"\n📋 Testing applications CRUD")
-    tester.test_applications_crud()
-    
-    # Test requests workflow
-    print(f"\n📋 Testing requests workflow")
-    tester.test_requests_workflow()
-    
-    # Test filters
-    print(f"\n📋 Testing filters")
-    tester.test_filters_and_options()
-    
-    # Print results
-    print(f"\n📊 Test Results Summary")
-    print("=" * 60)
-    print(f"Tests run: {tester.tests_run}")
-    print(f"Tests passed: {tester.tests_passed}")
-    print(f"Success rate: {(tester.tests_passed/tester.tests_run*100):.1f}%")
-    
-    # Print failed tests
-    failed_tests = [t for t in tester.test_results if t['status'] != 'PASS']
-    if failed_tests:
-        print(f"\n❌ Failed Tests ({len(failed_tests)}):")
-        for test in failed_tests:
-            print(f"  - {test['test']}: {test['details']}")
-    
-    return 0 if tester.tests_passed == tester.tests_run else 1
+    tester = RoleBasedDashboardTester()
+    return tester.run_comprehensive_test()
 
 if __name__ == "__main__":
     sys.exit(main())

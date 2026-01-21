@@ -42,6 +42,7 @@ const CHART_COLORS = ['#84CC16', '#18181B', '#64748B', '#E2E8F0', '#A3E635'];
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { user, getDashboardView, getAssignedCostCenters, isAdmin, isManager, isViewer } = useAuth();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState(null);
   const [spendByCategory, setSpendByCategory] = useState([]);
@@ -51,6 +52,9 @@ const DashboardPage = () => {
   const [highSpendLowEngagement, setHighSpendLowEngagement] = useState([]);
   const [executiveSummary, setExecutiveSummary] = useState(null);
   const [filterOptions, setFilterOptions] = useState({});
+  
+  const dashboardView = getDashboardView();
+  const assignedCostCenters = getAssignedCostCenters();
   
   // Filters
   const [filters, setFilters] = useState({
@@ -63,6 +67,25 @@ const DashboardPage = () => {
   });
   const [spendThreshold, setSpendThreshold] = useState([50000]);
   const [engagementThreshold, setEngagementThreshold] = useState([100]);
+
+  // Get dashboard title based on role
+  const getDashboardTitle = () => {
+    if (isAdmin()) return 'Executive Dashboard';
+    if (isManager()) return 'IT Management Dashboard';
+    return 'Usage Analytics Dashboard';
+  };
+
+  const getDashboardSubtitle = () => {
+    if (isAdmin()) return 'Full portfolio overview and analytics';
+    if (isManager()) {
+      return assignedCostCenters.length > 0 
+        ? `Managing: ${assignedCostCenters.slice(0, 2).join(', ')}${assignedCostCenters.length > 2 ? ` +${assignedCostCenters.length - 2} more` : ''}`
+        : 'Multi-department management view';
+    }
+    return assignedCostCenters.length > 0 
+      ? `Cost Center: ${assignedCostCenters[0]}`
+      : 'Department usage metrics';
+  };
 
   const fetchDashboardData = useCallback(async () => {
     try {

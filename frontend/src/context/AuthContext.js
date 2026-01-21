@@ -37,18 +37,33 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', access_token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     setToken(access_token);
-    setUser(userData);
-    return userData;
+    // Fetch full user profile with permissions
+    const profileRes = await axios.get(`${API}/auth/me`);
+    setUser(profileRes.data);
+    return profileRes.data;
   };
 
-  const register = async (email, password, name, role = 'viewer') => {
-    const response = await axios.post(`${API}/auth/register`, { email, password, name, role });
-    const { access_token, user: userData } = response.data;
+  const register = async (email, password, name, role = 'viewer', assignedCostCenters = []) => {
+    const response = await axios.post(`${API}/auth/register`, { 
+      email, 
+      password, 
+      name, 
+      role,
+      assigned_cost_centers: assignedCostCenters
+    });
+    const { access_token } = response.data;
     localStorage.setItem('token', access_token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     setToken(access_token);
-    setUser(userData);
-    return userData;
+    // Fetch full user profile with permissions
+    const profileRes = await axios.get(`${API}/auth/me`);
+    setUser(profileRes.data);
+    return profileRes.data;
+  };
+
+  const updateProfile = async (updates) => {
+    await axios.put(`${API}/auth/me`, updates);
+    await fetchUser();
   };
 
   const logout = () => {
@@ -58,8 +73,30 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Helper functions
+  const canEdit = () => user?.can_edit ?? false;
+  const isAdmin = () => user?.role === 'admin';
+  const isManager = () => user?.role === 'manager';
+  const isViewer = () => user?.role === 'viewer';
+  const getDashboardView = () => user?.dashboard_view || 'executive';
+  const getAssignedCostCenters = () => user?.assigned_cost_centers || [];
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      loading, 
+      login, 
+      register, 
+      logout,
+      updateProfile,
+      canEdit,
+      isAdmin,
+      isManager,
+      isViewer,
+      getDashboardView,
+      getAssignedCostCenters
+    }}>
       {children}
     </AuthContext.Provider>
   );

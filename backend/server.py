@@ -527,8 +527,15 @@ async def get_dashboard_kpis(
 
 @api_router.get("/dashboard/spend-by-category")
 async def get_spend_by_category(current_user: dict = Depends(get_current_user)):
+    match_stage = {"functional_category": {"$ne": None, "$ne": ""}}
+    
+    # Apply role-based cost center filter
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        match_stage.update(cc_filter)
+    
     pipeline = [
-        {"$match": {"functional_category": {"$ne": None, "$ne": ""}}},
+        {"$match": match_stage},
         {"$group": {
             "_id": "$functional_category",
             "total_spend": {"$sum": "$contract_annual_spend"},
@@ -542,8 +549,14 @@ async def get_spend_by_category(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/dashboard/apps-by-category")
 async def get_apps_by_category(current_user: dict = Depends(get_current_user)):
+    match_stage = {"functional_category": {"$ne": None, "$ne": ""}}
+    
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        match_stage.update(cc_filter)
+    
     pipeline = [
-        {"$match": {"functional_category": {"$ne": None, "$ne": ""}}},
+        {"$match": match_stage},
         {"$group": {
             "_id": "$functional_category",
             "count": {"$sum": 1}
@@ -556,8 +569,14 @@ async def get_apps_by_category(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/dashboard/spend-by-cost-center")
 async def get_spend_by_cost_center(current_user: dict = Depends(get_current_user)):
+    match_stage = {"cost_center_primary": {"$ne": None, "$ne": ""}}
+    
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        match_stage.update(cc_filter)
+    
     pipeline = [
-        {"$match": {"cost_center_primary": {"$ne": None, "$ne": ""}}},
+        {"$match": match_stage},
         {"$group": {
             "_id": "$cost_center_primary",
             "total_spend": {"$sum": "$contract_annual_spend"}
@@ -570,17 +589,25 @@ async def get_spend_by_cost_center(current_user: dict = Depends(get_current_user
 
 @api_router.get("/dashboard/users-by-category")
 async def get_users_by_category(current_user: dict = Depends(get_current_user)):
+    match_stage = {"functional_category": {"$ne": None, "$ne": ""}}
+    
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        match_stage.update(cc_filter)
+    
     pipeline = [
-        {"$match": {"functional_category": {"$ne": None, "$ne": ""}}},
+        {"$match": match_stage},
         {"$group": {
             "_id": "$functional_category",
-            "total_engaged": {"$sum": "$engaged_users"}
+            "total_engaged": {"$sum": "$engaged_users"},
+            "total_provisioned": {"$sum": "$provisioned_users"},
+            "total_sso": {"$sum": "$users_logging_in_via_sso"}
         }},
         {"$sort": {"total_engaged": -1}},
         {"$limit": 10}
     ]
     results = await db.applications.aggregate(pipeline).to_list(10)
-    return [{"category": r["_id"], "total_engaged": r["total_engaged"]} for r in results]
+    return [{"category": r["_id"], "total_engaged": r["total_engaged"], "total_provisioned": r.get("total_provisioned", 0), "total_sso": r.get("total_sso", 0)} for r in results]
 
 @api_router.get("/dashboard/high-spend-low-engagement")
 async def get_high_spend_low_engagement(
@@ -588,10 +615,16 @@ async def get_high_spend_low_engagement(
     engagement_threshold: int = 100,
     current_user: dict = Depends(get_current_user)
 ):
-    apps = await db.applications.find({
+    query = {
         "contract_annual_spend": {"$gte": spend_threshold},
         "engaged_users": {"$lte": engagement_threshold}
-    }, {"_id": 0}).sort("contract_annual_spend", -1).to_list(20)
+    }
+    
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        query.update(cc_filter)
+    
+    apps = await db.applications.find(query, {"_id": 0}).sort("contract_annual_spend", -1).to_list(20)
     return apps
 
 @api_router.get("/dashboard/executive-summary")

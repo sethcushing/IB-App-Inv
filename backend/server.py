@@ -480,6 +480,12 @@ async def get_dashboard_kpis(
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
+    
+    # Apply role-based cost center filter
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        query.update(cc_filter)
+    
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},

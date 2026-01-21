@@ -378,6 +378,10 @@ async def create_application(app: ApplicationCreate, current_user: dict = Depend
 
 @api_router.put("/applications/{app_id}")
 async def update_application(app_id: str, update: ApplicationUpdate, current_user: dict = Depends(get_current_user)):
+    # Viewers cannot edit
+    if current_user["role"] == "viewer":
+        raise HTTPException(status_code=403, detail="Viewers cannot edit applications")
+    
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
     update_data["last_updated"] = datetime.now(timezone.utc).isoformat()
     

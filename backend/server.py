@@ -45,16 +45,22 @@ class UserCreate(BaseModel):
     password: str
     name: str
     role: str = "viewer"  # admin, manager, viewer
+    assigned_cost_centers: Optional[List[str]] = []  # For managers: multiple, for viewers: single
 
 class UserLogin(BaseModel):
     email: str
     password: str
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    assigned_cost_centers: Optional[List[str]] = None
 
 class UserResponse(BaseModel):
     id: str
     email: str
     name: str
     role: str
+    assigned_cost_centers: List[str] = []
 
 class TokenResponse(BaseModel):
     access_token: str

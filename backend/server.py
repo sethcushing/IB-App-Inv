@@ -228,6 +228,7 @@ async def register(user: UserCreate):
         "password": hashed_password,
         "name": user.name,
         "role": user.role,
+        "assigned_cost_centers": user.assigned_cost_centers or [],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
@@ -235,7 +236,7 @@ async def register(user: UserCreate):
     token = create_token(user_id, user.email, user.role)
     return TokenResponse(
         access_token=token,
-        user=UserResponse(id=user_id, email=user.email, name=user.name, role=user.role)
+        user=UserResponse(id=user_id, email=user.email, name=user.name, role=user.role, assigned_cost_centers=user.assigned_cost_centers or [])
     )
 
 @api_router.post("/auth/login", response_model=TokenResponse)

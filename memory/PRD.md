@@ -6,63 +6,55 @@ Build a Systems Inventory Dashboard (Executive View) that imports Excel/CSV file
 - Drill-down inventory list to application details
 - Request Information workflow to contact Product Owner/Data Steward
 - Filtering by Cloud/On-Prem/Hybrid/Unknown deployment types
+- **Role-based views for different user types**
 
-## User Personas
-1. **Executive** - Needs high-level portfolio visibility, spend analytics, risk identification
-2. **IT Manager** - Manages application ownership, handles information requests
-3. **Analyst** - Reviews detailed app data, validates usage/cost metrics
+## User Personas & Dashboard Views
+1. **Executive (admin)** 
+   - Full portfolio visibility: all 342 apps, $23M total spend
+   - Financial KPIs: Contract Spend, YTD Expense, Engaged Users
+   - Can edit all applications
+   - Can seed sample data & import files
 
-## Core Requirements (Static)
-- JWT authentication with role-based demo accounts
-- Excel/CSV file import with auto column mapping
-- Dashboard KPIs: Total Apps, Annual Spend, YTD Expense, Engaged Users
-- Deployment breakdown (Cloud/On-Prem/Hybrid/Unknown)
-- Executive summary with auto-generated narrative
-- Charts: Spend by Category, Apps by Category, Spend by Cost Center
-- High Spend/Low Engagement analysis with threshold controls
-- Sortable/filterable inventory table
-- Application detail page with tabs (Overview, Usage, Financials, Data, Ownership, Requests)
-- Request Information workflow (in-app tracking, no email)
-- Download CSV template
+2. **IT Manager (manager)** 
+   - Multi-cost center filtered view: ~98 apps in 4 IT cost centers
+   - Financial KPIs focused on their portfolio
+   - Can edit applications in their scope
+   - Dashboard shows "IT Management Dashboard"
+
+3. **Analyst (viewer)** 
+   - Single cost center view: ~54 apps
+   - Usage-focused KPIs: Engaged Users, Provisioned Users, Engagement Rate
+   - **Read-only access** (cannot edit applications)
+   - Dashboard shows "Usage Analytics Dashboard"
 
 ## What's Been Implemented (December 2024)
-- [x] Full authentication system (JWT, register, login, quick demo access)
-- [x] Executive Dashboard with all KPI cards and charts
-- [x] Auto-generated executive summary with insights
-- [x] Dashboard filters (search, category, deployment, status, vendor)
-- [x] Inventory page with sortable/filterable table
-- [x] Application detail page with 6 tabs and edit mode
-- [x] Request Information modal with prefilled contacts
-- [x] Requests Center with status management
-- [x] Import page with Excel/CSV upload
-- [x] Sample data seeding functionality
-- [x] Currency parsing for various formats
-- [x] Deployment type inference from vendor hints
-- [x] Successfully imported user's 342 applications dataset
+- [x] Full authentication system with role-based permissions
+- [x] Cost center assignments stored in user profiles
+- [x] Role-specific dashboard views and KPIs
+- [x] Executive: Full portfolio with financial focus
+- [x] IT Manager: Multi-cost center filter with financial KPIs
+- [x] Analyst: Single cost center with usage metrics & read-only
+- [x] Role-specific executive summary narratives
+- [x] Edit permissions enforced on frontend (Read Only badge for viewers)
+- [x] Edit permissions enforced on backend (403 for viewers)
+- [x] All 342 applications from user's Excel imported
+
+## Demo Accounts
+| Role | Email | Cost Centers |
+|------|-------|--------------|
+| Executive | exec@demo.com | All (no filter) |
+| IT Manager | it@demo.com | 650-it executive, 651-it applications-crm, 652-it operations, 653-it applications-erp |
+| Analyst | analyst@demo.com | 650-it executive |
+
+Password for all: `demo123`
 
 ## Tech Stack
 - **Backend**: FastAPI, MongoDB, PyJWT, bcrypt, pandas, openpyxl
 - **Frontend**: React, Tailwind CSS, Recharts, Shadcn/UI, React Router
-- **Auth**: JWT tokens stored in localStorage
+- **Auth**: JWT tokens with role and cost center assignments
 
-## Prioritized Backlog
-
-### P0 (Critical) - Done
-- All core functionality implemented
-
-### P1 (High Priority)
-- [ ] Bulk deployment type update (many apps are "Unknown")
-- [ ] Export inventory data to CSV/Excel
-- [ ] More detailed cost center analysis
-
-### P2 (Nice to Have)
-- [ ] Email integration for actual request sending
-- [ ] User management (admin can manage users)
-- [ ] Audit trail for data changes
-- [ ] Data validation warnings on import
-- [ ] Custom dashboard widget arrangement
-
-## Next Tasks
-1. Consider adding deployment type bulk edit feature
-2. Export functionality for filtered data
-3. Data validation/cleanup tools for imported data
+## Next Action Items
+1. Add user profile settings page to update cost center assignments
+2. Bulk deployment type update for Unknown apps
+3. Export filtered data to CSV/Excel
+4. Consider line-of-business grouping for IT Manager view

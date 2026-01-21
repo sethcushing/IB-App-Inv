@@ -59,19 +59,19 @@ const LoginPage = () => {
   };
 
   const demoAccounts = [
-    { name: 'Executive', email: 'exec@demo.com', role: 'admin' },
-    { name: 'IT Manager', email: 'it@demo.com', role: 'manager' },
-    { name: 'Analyst', email: 'analyst@demo.com', role: 'viewer' },
+    { name: 'Executive', email: 'exec@demo.com', role: 'admin', costCenters: [] },
+    { name: 'IT Manager', email: 'it@demo.com', role: 'manager', costCenters: ['650-it executive', '653-it applications-erp', '651-it infrastructure'] },
+    { name: 'Analyst', email: 'analyst@demo.com', role: 'viewer', costCenters: ['650-it executive'] },
   ];
 
   const quickLogin = async (account) => {
     setLoading(true);
     try {
-      // Try to login first, if fails, register
+      // Try to login first, if fails, register with cost centers
       try {
         await login(account.email, 'demo123');
       } catch {
-        await register(account.email, 'demo123', account.name, account.role);
+        await register(account.email, 'demo123', account.name, account.role, account.costCenters);
       }
       toast.success(`Welcome, ${account.name}!`);
       navigate('/');

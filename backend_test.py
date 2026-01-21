@@ -5,17 +5,17 @@ import sys
 import json
 from datetime import datetime
 
-class SystemsInventoryAPITester:
+class RoleBasedDashboardTester:
     def __init__(self, base_url="https://inventory-central-11.preview.emergentagent.com/api"):
         self.base_url = base_url
-        self.token = None
+        self.tokens = {}
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
         self.demo_accounts = [
-            {"email": "exec@demo.com", "password": "demo123", "name": "Executive", "role": "admin"},
-            {"email": "it@demo.com", "password": "demo123", "name": "IT Manager", "role": "manager"},
-            {"email": "analyst@demo.com", "password": "demo123", "name": "Analyst", "role": "viewer"}
+            {"email": "exec@demo.com", "password": "demo123", "name": "Executive", "role": "admin", "expected_apps": (300, 400), "can_edit": True},
+            {"email": "it@demo.com", "password": "demo123", "name": "IT Manager", "role": "manager", "expected_apps": (80, 120), "can_edit": True},
+            {"email": "analyst@demo.com", "password": "demo123", "name": "Analyst", "role": "viewer", "expected_apps": (40, 70), "can_edit": False}
         ]
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):

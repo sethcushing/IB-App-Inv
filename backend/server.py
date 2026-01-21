@@ -67,6 +67,15 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+class UserProfileResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    role: str
+    assigned_cost_centers: List[str] = []
+    can_edit: bool = True
+    dashboard_view: str = "executive"  # executive, manager, analyst
+
 class ApplicationCreate(BaseModel):
     title: str
     status: Optional[str] = "unknown"

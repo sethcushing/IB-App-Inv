@@ -270,64 +270,128 @@ const DashboardPage = () => {
         </Card>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="kpi-card" data-testid="kpi-total-apps">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Total Applications</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                {formatNumber(kpis?.total_apps || 0)}
-              </p>
+      {/* KPI Cards - Role-specific */}
+      {isViewer() ? (
+        /* Analyst View - Usage Focused KPIs */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="kpi-card" data-testid="kpi-total-apps">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Applications in Scope</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatNumber(kpis?.total_apps || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-slate-600" />
+              </div>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-slate-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="kpi-card-accent" data-testid="kpi-total-spend">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Contract Annual Spend</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                {formatCurrency(kpis?.total_contract_spend || 0)}
-              </p>
+          <Card className="kpi-card-accent" data-testid="kpi-engaged-users">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Engaged Users</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatNumber(kpis?.total_engaged_users || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-lime-600" />
+              </div>
             </div>
-            <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-lime-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="kpi-card" data-testid="kpi-ytd-expense">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Fiscal YTD Expense</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                {formatCurrency(kpis?.total_ytd_expense || 0)}
-              </p>
+          <Card className="kpi-card" data-testid="kpi-provisioned">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Provisioned Users</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatNumber(executiveSummary?.metrics?.total_provisioned || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-slate-600" />
+              </div>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-slate-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="kpi-card" data-testid="kpi-engaged-users">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Engaged Users</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                {formatNumber(kpis?.total_engaged_users || 0)}
-              </p>
+          <Card className="kpi-card" data-testid="kpi-engagement-rate">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Engagement Rate</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {executiveSummary?.metrics?.total_provisioned > 0 
+                    ? `${((kpis?.total_engaged_users || 0) / executiveSummary.metrics.total_provisioned * 100).toFixed(1)}%`
+                    : '0%'}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                <Activity className="w-5 h-5 text-slate-600" />
+              </div>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-slate-600" />
+          </Card>
+        </div>
+      ) : (
+        /* Executive & Manager View - Financial KPIs */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="kpi-card" data-testid="kpi-total-apps">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Applications</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatNumber(kpis?.total_apps || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-slate-600" />
+              </div>
             </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+
+          <Card className="kpi-card-accent" data-testid="kpi-total-spend">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Contract Annual Spend</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatCurrency(kpis?.total_contract_spend || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-lime-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="kpi-card" data-testid="kpi-ytd-expense">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Fiscal YTD Expense</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatCurrency(kpis?.total_ytd_expense || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-slate-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="kpi-card" data-testid="kpi-engaged-users">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Engaged Users</p>
+                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                  {formatNumber(kpis?.total_engaged_users || 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-slate-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Deployment Breakdown */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

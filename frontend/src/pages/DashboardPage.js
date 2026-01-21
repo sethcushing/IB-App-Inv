@@ -170,17 +170,26 @@ const DashboardPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
-            Executive Dashboard
-          </h1>
-          <p className="text-slate-500 mt-1">Systems inventory overview and analytics</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
+              {getDashboardTitle()}
+            </h1>
+            <Badge variant="outline" className={`text-xs ${
+              isAdmin() ? 'bg-lime-100 text-lime-700 border-lime-300' :
+              isManager() ? 'bg-blue-100 text-blue-700 border-blue-300' :
+              'bg-slate-100 text-slate-600 border-slate-300'
+            }`}>
+              {user?.role}
+            </Badge>
+          </div>
+          <p className="text-slate-500 mt-1">{getDashboardSubtitle()}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={fetchDashboardData} data-testid="refresh-btn">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          {(!kpis || kpis.total_apps === 0) && (
+          {isAdmin() && (!kpis || kpis.total_apps === 0) && (
             <Button size="sm" onClick={seedData} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="seed-btn">
               Generate Sample Data
             </Button>

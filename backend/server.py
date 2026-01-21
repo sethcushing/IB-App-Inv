@@ -251,15 +251,50 @@ async def login(credentials: UserLogin):
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(
         access_token=token,
-        user=UserResponse(id=user["id"], email=user["email"], name=user["name"], role=user["role"])
+        user=UserResponse(
+            id=user["id"], 
+            email=user["email"], 
+            name=user["name"], 
+            role=user["role"],
+            assigned_cost_centers=user.get("assigned_cost_centers", [])
+        )
     )
 
-@api_router.get("/auth/me", response_model=UserResponse)
+@api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return UserResponse(**user)
+    
+    role = user.get("role", "viewer")
+    can_edit = role in ["admin", "manager"]
+    
+    dashboard_view = "executive"
+    if role == "manager":
+        dashboard_view = "manager"
+    elif role == "viewer":
+        dashboard_view = "analyst"
+    
+    return UserProfileResponse(
+        id=user["id"],
+        email=user["email"],
+        name=user["name"],
+        role=role,
+        assigned_cost_centers=user.get("assigned_cost_centers", []),
+        can_edit=can_edit,
+        dashboard_view=dashboard_view
+    )
+
+@api_router.put("/auth/me")
+async def update_me(update: UserUpdate, current_user: dict = Depends(get_current_user)):
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    result = await db.users.update_one({"id": current_user["id"]}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "Profile updated"}
 
 # ============ APPLICATIONS ROUTES ============
 

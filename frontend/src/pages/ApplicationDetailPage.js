@@ -229,10 +229,17 @@ const ApplicationDetailPage = () => {
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="edit-app">
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
+                {canEdit() ? (
+                  <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="edit-app">
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                ) : (
+                  <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 flex items-center gap-1 px-3 py-1">
+                    <Lock className="w-3 h-3" />
+                    Read Only
+                  </Badge>
+                )}
                 <Button size="sm" onClick={openRequestModal} className="bg-zinc-900 hover:bg-zinc-800" data-testid="request-info-btn">
                   <Mail className="w-4 h-4 mr-2" />
                   Request Info

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
 import {
   ArrowLeft, Building2, DollarSign, Users, Database, User, Mail,
-  Edit2, Save, X, Send, Clock, ChevronRight
+  Edit2, Save, X, Send, Clock, ChevronRight, Lock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -39,6 +40,7 @@ const formatCurrency = (value) => {
 const ApplicationDetailPage = () => {
   const { appId } = useParams();
   const navigate = useNavigate();
+  const { canEdit } = useAuth();
   const [loading, setLoading] = useState(true);
   const [app, setApp] = useState(null);
   const [requests, setRequests] = useState([]);

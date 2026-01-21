@@ -629,11 +629,21 @@ async def get_high_spend_low_engagement(
 
 @api_router.get("/dashboard/executive-summary")
 async def get_executive_summary(current_user: dict = Depends(get_current_user)):
-    apps = await db.applications.find({}, {"_id": 0}).to_list(10000)
+    query = {}
+    cc_filter = await get_user_cost_center_filter(current_user)
+    if cc_filter:
+        query.update(cc_filter)
+    
+    apps = await db.applications.find(query, {"_id": 0}).to_list(10000)
+    user_data = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    user_role = user_data.get("role", "viewer") if user_data else "viewer"
+    assigned_cc = user_data.get("assigned_cost_centers", []) if user_data else []
     
     total_apps = len(apps)
     total_spend = sum(a.get("contract_annual_spend", 0) or 0 for a in apps)
     total_engaged = sum(a.get("engaged_users", 0) or 0 for a in apps)
+    total_provisioned = sum(a.get("provisioned_users", 0) or 0 for a in apps)
+    total_sso = sum(a.get("users_logging_in_via_sso", 0) or 0 for a in apps)
     
     # Deployment breakdown
     deployment_counts = {"Cloud": 0, "On-Prem": 0, "Hybrid": 0, "Unknown": 0}
@@ -655,23 +665,41 @@ async def get_executive_summary(current_user: dict = Depends(get_current_user)):
     # High spend low engagement
     high_spend_low_engage = sum(1 for a in apps if (a.get("contract_annual_spend", 0) or 0) > 50000 and (a.get("engaged_users", 0) or 0) < 100)
     
-    summary_parts = [
-        f"Your portfolio contains {total_apps} applications with ${total_spend:,.0f} in annual contract spend.",
-    ]
-    
-    if top_categories:
-        summary_parts.append(f"Top spend categories: {', '.join([f'{c[0]} (${c[1]:,.0f})' for c in top_categories[:2]])}.")
-    
-    if total_engaged > 0:
-        summary_parts.append(f"Total engaged users across all apps: {total_engaged:,}.")
-    
-    summary_parts.append(f"Deployment mix: {deployment_counts['Cloud']} Cloud, {deployment_counts['On-Prem']} On-Prem, {deployment_counts['Unknown']} Unknown.")
-    
-    if high_spend_low_engage > 0:
-        summary_parts.append(f"⚠️ {high_spend_low_engage} apps have high spend (>$50K) but low engagement (<100 users) - consider reviewing.")
-    
-    if missing_owner > 0:
-        summary_parts.append(f"📋 {missing_owner} apps are missing a product owner assignment.")
+    # Build role-appropriate summary
+    if user_role == "admin":
+        # Executive view - full portfolio
+        summary_parts = [
+            f"Portfolio Overview: {total_apps} applications with ${total_spend:,.0f} in annual contract spend.",
+        ]
+        if top_categories:
+            summary_parts.append(f"Top spend: {', '.join([f'{c[0]} (${c[1]:,.0f})' for c in top_categories[:2]])}.")
+        summary_parts.append(f"Deployment: {deployment_counts['Cloud']} Cloud, {deployment_counts['On-Prem']} On-Prem, {deployment_counts['Unknown']} Unknown.")
+        if high_spend_low_engage > 0:
+            summary_parts.append(f"⚠️ {high_spend_low_engage} apps need review (high spend, low engagement).")
+        if missing_owner > 0:
+            summary_parts.append(f"📋 {missing_owner} apps missing owner.")
+    elif user_role == "manager":
+        # Manager view - multi cost center focus
+        cc_text = f"Cost Centers: {', '.join(assigned_cc)}" if assigned_cc else "All Cost Centers"
+        summary_parts = [
+            f"IT Management View ({cc_text}): {total_apps} applications, ${total_spend:,.0f} annual spend.",
+        ]
+        if top_categories:
+            summary_parts.append(f"Top categories: {', '.join([c[0] for c in top_categories[:3]])}.")
+        summary_parts.append(f"{total_engaged:,} engaged users across your portfolio.")
+        if high_spend_low_engage > 0:
+            summary_parts.append(f"⚠️ {high_spend_low_engage} apps flagged for optimization review.")
+    else:
+        # Analyst view - usage metrics focus
+        cc_text = f"Cost Center: {assigned_cc[0]}" if assigned_cc else "All Cost Centers"
+        summary_parts = [
+            f"Usage Analytics ({cc_text}): {total_apps} applications in scope.",
+        ]
+        summary_parts.append(f"👥 {total_engaged:,} engaged users | {total_provisioned:,} provisioned | {total_sso:,} SSO logins.")
+        engagement_rate = (total_engaged / total_provisioned * 100) if total_provisioned > 0 else 0
+        summary_parts.append(f"Engagement rate: {engagement_rate:.1f}%.")
+        if deployment_counts['Unknown'] > 0:
+            summary_parts.append(f"📊 {deployment_counts['Unknown']} apps need deployment classification.")
     
     return {
         "summary": " ".join(summary_parts),
@@ -679,10 +707,13 @@ async def get_executive_summary(current_user: dict = Depends(get_current_user)):
             "total_apps": total_apps,
             "total_spend": total_spend,
             "total_engaged": total_engaged,
+            "total_provisioned": total_provisioned,
+            "total_sso": total_sso,
             "deployment_counts": deployment_counts,
             "missing_owner_count": missing_owner,
             "high_spend_low_engage_count": high_spend_low_engage
-        }
+        },
+        "view_type": user_role
     }
 
 # ============ FILTER OPTIONS ============

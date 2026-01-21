@@ -211,6 +211,22 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+async def get_user_cost_center_filter(current_user: dict) -> Optional[dict]:
+    """Get cost center filter based on user role and assigned cost centers"""
+    if current_user["role"] == "admin":
+        return None  # No filter - sees everything
+    
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    if not user:
+        return None
+    
+    assigned = user.get("assigned_cost_centers", [])
+    if not assigned:
+        return None  # No restriction if not assigned
+    
+    # Filter by assigned cost centers
+    return {"cost_center_primary": {"$in": assigned}}
+
 # ============ AUTH ROUTES ============
 
 @api_router.post("/auth/register", response_model=TokenResponse)

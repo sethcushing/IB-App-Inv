@@ -2,13 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
 import {
-  Search, Filter, ChevronUp, ChevronDown, ChevronRight, RefreshCw, Download
+  Search, Filter, ChevronUp, ChevronDown, ChevronRight, RefreshCw, Plus
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
+import { Textarea } from '../components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -16,6 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -26,12 +37,35 @@ const formatCurrency = (value) => {
   return `$${value.toFixed(0)}`;
 };
 
+const emptyAppForm = {
+  title: '',
+  vendor: '',
+  status: 'under_review',
+  functional_category: '',
+  deployment_type: 'Unknown',
+  short_description: '',
+  capabilities: '',
+  contract_annual_spend: '',
+  fiscal_ytd_expense_total: '',
+  engaged_users: '',
+  provisioned_users: '',
+  cost_center_primary: '',
+  product_owner_name: '',
+  data_steward_name: '',
+  it_contact: '',
+  notes: ''
+};
+
 const InventoryPage = () => {
   const navigate = useNavigate();
+  const { canEdit } = useAuth();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
   const [total, setTotal] = useState(0);
   const [filterOptions, setFilterOptions] = useState({});
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newAppForm, setNewAppForm] = useState(emptyAppForm);
+  const [submitting, setSubmitting] = useState(false);
   
   const [filters, setFilters] = useState({
     search: '',
@@ -102,6 +136,41 @@ const InventoryPage = () => {
     setPage(0);
   };
 
+  const handleAddApplication = async () => {
+    if (!newAppForm.title.trim()) {
+      toast.error('Application title is required');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        ...newAppForm,
+        contract_annual_spend: newAppForm.contract_annual_spend ? parseFloat(newAppForm.contract_annual_spend) : 0,
+        fiscal_ytd_expense_total: newAppForm.fiscal_ytd_expense_total ? parseFloat(newAppForm.fiscal_ytd_expense_total) : 0,
+        engaged_users: newAppForm.engaged_users ? parseInt(newAppForm.engaged_users) : 0,
+        provisioned_users: newAppForm.provisioned_users ? parseInt(newAppForm.provisioned_users) : 0,
+      };
+
+      const res = await axios.post(`${API}/applications`, payload);
+      toast.success('Application created successfully');
+      setAddModalOpen(false);
+      setNewAppForm(emptyAppForm);
+      // Navigate to the new application's detail page
+      navigate(`/applications/${res.data.app_id}`);
+    } catch (error) {
+      console.error('Create error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to create application');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openAddModal = () => {
+    setNewAppForm(emptyAppForm);
+    setAddModalOpen(true);
+  };
+
   const SortIcon = ({ field }) => {
     if (sortBy !== field) return null;
     return sortOrder === 'asc' ? 
@@ -141,10 +210,18 @@ const InventoryPage = () => {
             {total} applications in portfolio
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchApplications} data-testid="refresh-inventory">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchApplications} data-testid="refresh-inventory">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          {canEdit() && (
+            <Button size="sm" onClick={openAddModal} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="add-application-btn">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Application
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -229,6 +306,12 @@ const InventoryPage = () => {
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <p className="text-slate-500">No applications found</p>
               <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or import data</p>
+              {canEdit() && (
+                <Button size="sm" onClick={openAddModal} className="mt-4 bg-lime-500 hover:bg-lime-600 text-zinc-900">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Application
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -361,6 +444,248 @@ const InventoryPage = () => {
           </div>
         </div>
       )}
+
+      {/* Add Application Modal */}
+      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Application</DialogTitle>
+            <DialogDescription>
+              Enter the details for the new application. Required fields are marked with *.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="app-title">Application Title *</Label>
+                <Input
+                  id="app-title"
+                  value={newAppForm.title}
+                  onChange={(e) => setNewAppForm({ ...newAppForm, title: e.target.value })}
+                  placeholder="e.g., Salesforce CRM"
+                  className="mt-1"
+                  data-testid="new-app-title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="app-vendor">Vendor</Label>
+                <Input
+                  id="app-vendor"
+                  value={newAppForm.vendor}
+                  onChange={(e) => setNewAppForm({ ...newAppForm, vendor: e.target.value })}
+                  placeholder="e.g., Salesforce"
+                  className="mt-1"
+                  data-testid="new-app-vendor"
+                />
+              </div>
+              <div>
+                <Label htmlFor="app-status">Status</Label>
+                <Select 
+                  value={newAppForm.status} 
+                  onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}
+                >
+                  <SelectTrigger className="mt-1" data-testid="new-app-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="under_review">Under Review</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="deprecated">Deprecated</SelectItem>
+                    <SelectItem value="unknown">Unknown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="app-category">Functional Category</Label>
+                <Input
+                  id="app-category"
+                  value={newAppForm.functional_category}
+                  onChange={(e) => setNewAppForm({ ...newAppForm, functional_category: e.target.value })}
+                  placeholder="e.g., Sales Engagement"
+                  className="mt-1"
+                  data-testid="new-app-category"
+                />
+              </div>
+              <div>
+                <Label htmlFor="app-deployment">Deployment Type</Label>
+                <Select 
+                  value={newAppForm.deployment_type} 
+                  onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}
+                >
+                  <SelectTrigger className="mt-1" data-testid="new-app-deployment">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cloud">Cloud</SelectItem>
+                    <SelectItem value="On-Prem">On-Prem</SelectItem>
+                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    <SelectItem value="Unknown">Unknown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="app-description">Description</Label>
+              <Textarea
+                id="app-description"
+                value={newAppForm.short_description}
+                onChange={(e) => setNewAppForm({ ...newAppForm, short_description: e.target.value })}
+                placeholder="Brief description of the application..."
+                className="mt-1"
+                rows={2}
+                data-testid="new-app-description"
+              />
+            </div>
+
+            {/* Financial Info */}
+            <div className="border-t border-slate-200 pt-4">
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Financial Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="app-spend">Contract Annual Spend ($)</Label>
+                  <Input
+                    id="app-spend"
+                    type="number"
+                    value={newAppForm.contract_annual_spend}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, contract_annual_spend: e.target.value })}
+                    placeholder="0"
+                    className="mt-1"
+                    data-testid="new-app-spend"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="app-ytd">Fiscal YTD Expense ($)</Label>
+                  <Input
+                    id="app-ytd"
+                    type="number"
+                    value={newAppForm.fiscal_ytd_expense_total}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, fiscal_ytd_expense_total: e.target.value })}
+                    placeholder="0"
+                    className="mt-1"
+                    data-testid="new-app-ytd"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Usage Info */}
+            <div className="border-t border-slate-200 pt-4">
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Usage Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="app-engaged">Engaged Users</Label>
+                  <Input
+                    id="app-engaged"
+                    type="number"
+                    value={newAppForm.engaged_users}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, engaged_users: e.target.value })}
+                    placeholder="0"
+                    className="mt-1"
+                    data-testid="new-app-engaged"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="app-provisioned">Provisioned Users</Label>
+                  <Input
+                    id="app-provisioned"
+                    type="number"
+                    value={newAppForm.provisioned_users}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, provisioned_users: e.target.value })}
+                    placeholder="0"
+                    className="mt-1"
+                    data-testid="new-app-provisioned"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Ownership Info */}
+            <div className="border-t border-slate-200 pt-4">
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Ownership & Contacts</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="app-cost-center">Cost Center</Label>
+                  <Input
+                    id="app-cost-center"
+                    value={newAppForm.cost_center_primary}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, cost_center_primary: e.target.value })}
+                    placeholder="e.g., 650-it executive"
+                    className="mt-1"
+                    data-testid="new-app-cost-center"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="app-owner">Product Owner</Label>
+                  <Input
+                    id="app-owner"
+                    value={newAppForm.product_owner_name}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, product_owner_name: e.target.value })}
+                    placeholder="Owner name"
+                    className="mt-1"
+                    data-testid="new-app-owner"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="app-steward">Data Steward</Label>
+                  <Input
+                    id="app-steward"
+                    value={newAppForm.data_steward_name}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, data_steward_name: e.target.value })}
+                    placeholder="Steward name"
+                    className="mt-1"
+                    data-testid="new-app-steward"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="app-it-contact">IT Contact</Label>
+                  <Input
+                    id="app-it-contact"
+                    value={newAppForm.it_contact}
+                    onChange={(e) => setNewAppForm({ ...newAppForm, it_contact: e.target.value })}
+                    placeholder="IT contact name"
+                    className="mt-1"
+                    data-testid="new-app-it-contact"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="border-t border-slate-200 pt-4">
+              <Label htmlFor="app-notes">Notes</Label>
+              <Textarea
+                id="app-notes"
+                value={newAppForm.notes}
+                onChange={(e) => setNewAppForm({ ...newAppForm, notes: e.target.value })}
+                placeholder="Additional notes..."
+                className="mt-1"
+                rows={2}
+                data-testid="new-app-notes"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddModalOpen(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddApplication} 
+              disabled={submitting || !newAppForm.title.trim()}
+              className="bg-lime-500 hover:bg-lime-600 text-zinc-900"
+              data-testid="submit-new-app"
+            >
+              {submitting ? 'Creating...' : 'Create Application'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

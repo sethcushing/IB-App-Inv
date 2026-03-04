@@ -4,13 +4,14 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
   Search, Filter, ChevronUp, ChevronDown, ChevronRight, RefreshCw, Plus, X,
-  Edit2, Save, Trash2
+  Edit2, Save, Columns, Check, GripVertical
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Textarea } from '../components/ui/textarea';
+import { Checkbox } from '../components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../components/ui/popover';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -35,6 +41,28 @@ const formatCurrency = (value) => {
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
   return `$${value.toFixed(0)}`;
 };
+
+// All available columns configuration
+const ALL_COLUMNS = [
+  { id: 'title', label: 'Title', field: 'title', sortable: true, required: true, width: 'max-w-[200px]' },
+  { id: 'status', label: 'Status', field: 'status', sortable: true, required: false },
+  { id: 'functional_category', label: 'Category', field: 'functional_category', sortable: true, required: false, width: 'max-w-[150px]' },
+  { id: 'vendor', label: 'Vendor', field: 'vendor', sortable: true, required: false, width: 'max-w-[120px]' },
+  { id: 'deployment_type', label: 'Deployment', field: 'deployment_type', sortable: false, required: false },
+  { id: 'contract_annual_spend', label: 'Annual Spend', field: 'contract_annual_spend', sortable: true, required: false, align: 'right', format: 'currency' },
+  { id: 'fiscal_ytd_expense_total', label: 'YTD Expense', field: 'fiscal_ytd_expense_total', sortable: true, required: false, align: 'right', format: 'currency' },
+  { id: 'engaged_users', label: 'Engaged Users', field: 'engaged_users', sortable: true, required: false, align: 'right', format: 'number' },
+  { id: 'provisioned_users', label: 'Provisioned', field: 'provisioned_users', sortable: true, required: false, align: 'right', format: 'number' },
+  { id: 'product_owner_name', label: 'Owner', field: 'product_owner_name', sortable: false, required: false, width: 'max-w-[120px]' },
+  { id: 'data_steward_name', label: 'Data Steward', field: 'data_steward_name', sortable: false, required: false, width: 'max-w-[120px]' },
+  { id: 'it_contact', label: 'IT Contact', field: 'it_contact', sortable: false, required: false, width: 'max-w-[120px]' },
+  { id: 'cost_center_primary', label: 'Cost Center', field: 'cost_center_primary', sortable: true, required: false, width: 'max-w-[120px]' },
+  { id: 'capabilities', label: 'Capabilities', field: 'capabilities', sortable: false, required: false, width: 'max-w-[200px]' },
+  { id: 'short_description', label: 'Description', field: 'short_description', sortable: false, required: false, width: 'max-w-[200px]' },
+];
+
+// Default visible columns
+const DEFAULT_VISIBLE_COLUMNS = ['title', 'status', 'functional_category', 'vendor', 'deployment_type', 'contract_annual_spend', 'engaged_users', 'product_owner_name'];
 
 const emptyAppForm = {
   title: '',
@@ -66,6 +94,13 @@ const InventoryPage = () => {
   const [newAppForm, setNewAppForm] = useState(emptyAppForm);
   const [submitting, setSubmitting] = useState(false);
   
+  // Column visibility state - load from localStorage
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('bia-inventory-columns');
+    return saved ? JSON.parse(saved) : DEFAULT_VISIBLE_COLUMNS;
+  });
+  const [columnPopoverOpen, setColumnPopoverOpen] = useState(false);
+  
   // Inline editing state
   const [editingRowId, setEditingRowId] = useState(null);
   const [editRowData, setEditRowData] = useState({});
@@ -86,6 +121,11 @@ const InventoryPage = () => {
   const limit = 25;
 
   const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('deployment_type');
+
+  // Save column preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem('bia-inventory-columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -155,20 +195,42 @@ const InventoryPage = () => {
     setPage(0);
   };
 
+  // Column visibility toggle
+  const toggleColumn = (columnId) => {
+    const column = ALL_COLUMNS.find(c => c.id === columnId);
+    if (column?.required) return; // Can't hide required columns
+    
+    setVisibleColumns(prev => {
+      if (prev.includes(columnId)) {
+        return prev.filter(id => id !== columnId);
+      } else {
+        return [...prev, columnId];
+      }
+    });
+  };
+
+  const resetColumns = () => {
+    setVisibleColumns(DEFAULT_VISIBLE_COLUMNS);
+  };
+
+  const selectAllColumns = () => {
+    setVisibleColumns(ALL_COLUMNS.map(c => c.id));
+  };
+
+  // Get visible column configs in order
+  const getVisibleColumnConfigs = () => {
+    return ALL_COLUMNS.filter(col => visibleColumns.includes(col.id));
+  };
+
   // Inline editing functions
   const startEditingRow = (app, e) => {
     e.stopPropagation();
     setEditingRowId(app.app_id);
-    setEditRowData({
-      title: app.title || '',
-      status: app.status || 'unknown',
-      functional_category: app.functional_category || '',
-      vendor: app.vendor || '',
-      deployment_type: app.deployment_type || 'Unknown',
-      contract_annual_spend: app.contract_annual_spend || 0,
-      engaged_users: app.engaged_users || 0,
-      product_owner_name: app.product_owner_name || ''
+    const editData = {};
+    ALL_COLUMNS.forEach(col => {
+      editData[col.field] = app[col.field] || '';
     });
+    setEditRowData(editData);
   };
 
   const cancelEditingRow = (e) => {
@@ -183,11 +245,14 @@ const InventoryPage = () => {
 
     setSavingRow(true);
     try {
-      await axios.put(`${API}/applications/${editingRowId}`, {
-        ...editRowData,
-        contract_annual_spend: parseFloat(editRowData.contract_annual_spend) || 0,
-        engaged_users: parseInt(editRowData.engaged_users) || 0
-      });
+      const payload = { ...editRowData };
+      // Convert numeric fields
+      if (payload.contract_annual_spend) payload.contract_annual_spend = parseFloat(payload.contract_annual_spend) || 0;
+      if (payload.fiscal_ytd_expense_total) payload.fiscal_ytd_expense_total = parseFloat(payload.fiscal_ytd_expense_total) || 0;
+      if (payload.engaged_users) payload.engaged_users = parseInt(payload.engaged_users) || 0;
+      if (payload.provisioned_users) payload.provisioned_users = parseInt(payload.provisioned_users) || 0;
+      
+      await axios.put(`${API}/applications/${editingRowId}`, payload);
       toast.success('Application updated');
       setEditingRowId(null);
       setEditRowData({});
@@ -259,34 +324,45 @@ const InventoryPage = () => {
     }
   };
 
-  const totalPages = Math.ceil(total / limit);
+  // Render cell value based on column config
+  const renderCellValue = (app, column) => {
+    const value = app[column.field];
+    
+    if (column.id === 'status') {
+      return (
+        <Badge className={`capitalize text-xs ${getStatusBadgeClass(value)}`}>
+          {value || 'unknown'}
+        </Badge>
+      );
+    }
+    
+    if (column.id === 'deployment_type') {
+      return (
+        <Badge className={`text-xs ${getDeploymentBadgeClass(value)}`}>
+          {value || 'Unknown'}
+        </Badge>
+      );
+    }
+    
+    if (column.format === 'currency') {
+      return <span className="font-mono">{formatCurrency(value)}</span>;
+    }
+    
+    if (column.format === 'number') {
+      return <span className="font-mono">{value || 0}</span>;
+    }
+    
+    return <span className={`truncate ${column.width || ''}`}>{value || '-'}</span>;
+  };
 
-  // Render editable row
-  const renderEditableRow = (app) => (
-    <tr 
-      key={app.app_id}
-      className="table-row-bordered bg-green-500/5 border-l-2 border-l-green-500"
-      data-testid={`app-row-editing-${app.app_id}`}
-    >
-      <td className="p-2">
-        <Input
-          value={editRowData.title}
-          onChange={(e) => setEditRowData({ ...editRowData, title: e.target.value })}
-          className="h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary"
-          onClick={(e) => e.stopPropagation()}
-          data-testid="edit-title-input"
-        />
-      </td>
-      <td className="p-2">
-        <Select 
-          value={editRowData.status} 
-          onValueChange={(v) => setEditRowData({ ...editRowData, status: v })}
-        >
-          <SelectTrigger 
-            className="h-8 text-xs bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[100px]"
-            onClick={(e) => e.stopPropagation()}
-            data-testid="edit-status-select"
-          >
+  // Render editable cell based on column config
+  const renderEditableCell = (column) => {
+    const value = editRowData[column.field] || '';
+    
+    if (column.id === 'status') {
+      return (
+        <Select value={value} onValueChange={(v) => setEditRowData({ ...editRowData, [column.field]: v })}>
+          <SelectTrigger className="h-8 text-xs bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[100px]" onClick={(e) => e.stopPropagation()}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
@@ -297,35 +373,13 @@ const InventoryPage = () => {
             <SelectItem value="unknown">Unknown</SelectItem>
           </SelectContent>
         </Select>
-      </td>
-      <td className="p-2">
-        <Input
-          value={editRowData.functional_category}
-          onChange={(e) => setEditRowData({ ...editRowData, functional_category: e.target.value })}
-          className="h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[120px]"
-          onClick={(e) => e.stopPropagation()}
-          data-testid="edit-category-input"
-        />
-      </td>
-      <td className="p-2">
-        <Input
-          value={editRowData.vendor}
-          onChange={(e) => setEditRowData({ ...editRowData, vendor: e.target.value })}
-          className="h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[100px]"
-          onClick={(e) => e.stopPropagation()}
-          data-testid="edit-vendor-input"
-        />
-      </td>
-      <td className="p-2">
-        <Select 
-          value={editRowData.deployment_type} 
-          onValueChange={(v) => setEditRowData({ ...editRowData, deployment_type: v })}
-        >
-          <SelectTrigger 
-            className="h-8 text-xs bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[90px]"
-            onClick={(e) => e.stopPropagation()}
-            data-testid="edit-deployment-select"
-          >
+      );
+    }
+    
+    if (column.id === 'deployment_type') {
+      return (
+        <Select value={value || 'Unknown'} onValueChange={(v) => setEditRowData({ ...editRowData, [column.field]: v })}>
+          <SelectTrigger className="h-8 text-xs bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[90px]" onClick={(e) => e.stopPropagation()}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
@@ -335,113 +389,25 @@ const InventoryPage = () => {
             <SelectItem value="Unknown">Unknown</SelectItem>
           </SelectContent>
         </Select>
-      </td>
-      <td className="p-2">
-        <Input
-          type="number"
-          value={editRowData.contract_annual_spend}
-          onChange={(e) => setEditRowData({ ...editRowData, contract_annual_spend: e.target.value })}
-          className="h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[100px] text-right"
-          onClick={(e) => e.stopPropagation()}
-          data-testid="edit-spend-input"
-        />
-      </td>
-      <td className="p-2">
-        <Input
-          type="number"
-          value={editRowData.engaged_users}
-          onChange={(e) => setEditRowData({ ...editRowData, engaged_users: e.target.value })}
-          className="h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[70px] text-right"
-          onClick={(e) => e.stopPropagation()}
-          data-testid="edit-users-input"
-        />
-      </td>
-      <td className="p-2">
-        <Input
-          value={editRowData.product_owner_name}
-          onChange={(e) => setEditRowData({ ...editRowData, product_owner_name: e.target.value })}
-          className="h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[100px]"
-          onClick={(e) => e.stopPropagation()}
-          data-testid="edit-owner-input"
-        />
-      </td>
-      <td className="p-2">
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            onClick={saveEditedRow}
-            disabled={savingRow}
-            className="h-7 px-2 bg-green-600 hover:bg-green-500 text-white"
-            data-testid="save-row-btn"
-          >
-            <Save className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={cancelEditingRow}
-            className="h-7 px-2 text-theme-muted hover:text-theme-primary"
-            data-testid="cancel-row-btn"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      </td>
-    </tr>
-  );
+      );
+    }
+    
+    const inputType = column.format === 'currency' || column.format === 'number' ? 'number' : 'text';
+    const inputWidth = column.format ? 'w-[80px]' : 'w-[100px]';
+    
+    return (
+      <Input
+        type={inputType}
+        value={value}
+        onChange={(e) => setEditRowData({ ...editRowData, [column.field]: e.target.value })}
+        className={`h-8 text-sm bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary ${inputWidth} ${column.align === 'right' ? 'text-right' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      />
+    );
+  };
 
-  // Render normal row
-  const renderNormalRow = (app) => (
-    <tr 
-      key={app.app_id}
-      className="table-row-bordered hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors group"
-      onClick={() => navigate(`/applications/${app.app_id}`)}
-      data-testid={`app-row-${app.app_id}`}
-    >
-      <td className="p-4">
-        <p className="font-medium text-theme-primary max-w-[200px] truncate">{app.title}</p>
-      </td>
-      <td className="p-4">
-        <Badge className={`capitalize text-xs ${getStatusBadgeClass(app.status)}`}>
-          {app.status || 'unknown'}
-        </Badge>
-      </td>
-      <td className="p-4 text-theme-secondary text-sm max-w-[150px] truncate">
-        {app.functional_category || '-'}
-      </td>
-      <td className="p-4 text-theme-secondary text-sm max-w-[120px] truncate">
-        {app.vendor || '-'}
-      </td>
-      <td className="p-4 text-center">
-        <Badge className={`text-xs ${getDeploymentBadgeClass(app.deployment_type)}`}>
-          {app.deployment_type || 'Unknown'}
-        </Badge>
-      </td>
-      <td className="p-4 text-right font-mono text-sm text-theme-secondary">
-        {formatCurrency(app.contract_annual_spend)}
-      </td>
-      <td className="p-4 text-right font-mono text-sm text-theme-secondary">
-        {app.engaged_users || 0}
-      </td>
-      <td className="p-4 text-theme-secondary text-sm max-w-[120px] truncate">
-        {app.product_owner_name || '-'}
-      </td>
-      <td className="p-4">
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => startEditingRow(app, e)}
-            className="h-7 px-2 text-theme-muted hover:text-green-500 hover:bg-green-500/10"
-            data-testid={`edit-row-btn-${app.app_id}`}
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </Button>
-          <ChevronRight className="w-4 h-4 text-theme-faint" />
-        </div>
-      </td>
-    </tr>
-  );
+  const totalPages = Math.ceil(total / limit);
+  const visibleColumnConfigs = getVisibleColumnConfigs();
 
   return (
     <div className="space-y-6">
@@ -456,6 +422,69 @@ const InventoryPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          {/* Column Selector */}
+          <Popover open={columnPopoverOpen} onOpenChange={setColumnPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                data-testid="column-selector-btn"
+                className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-theme-primary"
+              >
+                <Columns className="w-4 h-4 mr-2" />
+                Columns ({visibleColumns.length})
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0 bg-[var(--sidebar-bg)] border-[var(--glass-border)]" align="end">
+              <div className="p-3 border-b border-[var(--glass-border)]">
+                <h4 className="font-medium text-theme-primary text-sm">Show/Hide Columns</h4>
+                <p className="text-xs text-theme-muted mt-1">Select columns to display in the grid</p>
+              </div>
+              <div className="p-2 max-h-[300px] overflow-y-auto">
+                {ALL_COLUMNS.map(column => (
+                  <div 
+                    key={column.id}
+                    className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--glass-highlight)] cursor-pointer"
+                    onClick={() => toggleColumn(column.id)}
+                    data-testid={`column-toggle-${column.id}`}
+                  >
+                    <Checkbox 
+                      checked={visibleColumns.includes(column.id)}
+                      disabled={column.required}
+                      className="border-[var(--glass-border)] data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                    />
+                    <span className={`text-sm flex-1 ${column.required ? 'text-theme-muted' : 'text-theme-primary'}`}>
+                      {column.label}
+                    </span>
+                    {column.required && (
+                      <span className="text-[10px] text-theme-faint bg-[var(--glass-highlight)] px-1.5 py-0.5 rounded">Required</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="p-2 border-t border-[var(--glass-border)] flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetColumns}
+                  className="flex-1 text-xs text-theme-muted hover:text-theme-primary"
+                  data-testid="reset-columns-btn"
+                >
+                  Reset
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={selectAllColumns}
+                  className="flex-1 text-xs text-theme-muted hover:text-theme-primary"
+                  data-testid="select-all-columns-btn"
+                >
+                  Select All
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Button 
             variant="outline" 
             size="sm" 
@@ -611,35 +640,88 @@ const InventoryPage = () => {
             <table className="w-full" data-testid="inventory-table">
               <thead>
                 <tr className="table-header border-b-2 border-[var(--glass-border)]">
-                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('title')}>
-                    Title <SortIcon field="title" />
-                  </th>
-                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('status')}>
-                    Status <SortIcon field="status" />
-                  </th>
-                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('functional_category')}>
-                    Category <SortIcon field="functional_category" />
-                  </th>
-                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('vendor')}>
-                    Vendor <SortIcon field="vendor" />
-                  </th>
-                  <th className="text-center p-4">Deployment</th>
-                  <th className="text-right p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('contract_annual_spend')}>
-                    Annual Spend <SortIcon field="contract_annual_spend" />
-                  </th>
-                  <th className="text-right p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('engaged_users')}>
-                    Engaged <SortIcon field="engaged_users" />
-                  </th>
-                  <th className="text-left p-4">Owner</th>
+                  {visibleColumnConfigs.map(column => (
+                    <th 
+                      key={column.id}
+                      className={`p-4 ${column.align === 'right' ? 'text-right' : column.id === 'deployment_type' ? 'text-center' : 'text-left'} ${column.sortable ? 'cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors' : ''}`}
+                      onClick={() => column.sortable && handleSort(column.field)}
+                    >
+                      {column.label} {column.sortable && <SortIcon field={column.field} />}
+                    </th>
+                  ))}
                   <th className="text-center p-4 w-[80px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {applications.map((app) => 
-                  editingRowId === app.app_id 
-                    ? renderEditableRow(app) 
-                    : renderNormalRow(app)
-                )}
+                {applications.map((app) => (
+                  editingRowId === app.app_id ? (
+                    // Editable row
+                    <tr 
+                      key={app.app_id}
+                      className="table-row-bordered bg-green-500/5 border-l-2 border-l-green-500"
+                      data-testid={`app-row-editing-${app.app_id}`}
+                    >
+                      {visibleColumnConfigs.map(column => (
+                        <td key={column.id} className={`p-2 ${column.align === 'right' ? 'text-right' : column.id === 'deployment_type' ? 'text-center' : ''}`}>
+                          {renderEditableCell(column)}
+                        </td>
+                      ))}
+                      <td className="p-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            size="sm"
+                            onClick={saveEditedRow}
+                            disabled={savingRow}
+                            className="h-7 px-2 bg-green-600 hover:bg-green-500 text-white"
+                            data-testid="save-row-btn"
+                          >
+                            <Save className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={cancelEditingRow}
+                            className="h-7 px-2 text-theme-muted hover:text-theme-primary"
+                            data-testid="cancel-row-btn"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    // Normal row
+                    <tr 
+                      key={app.app_id}
+                      className="table-row-bordered hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors group"
+                      onClick={() => navigate(`/applications/${app.app_id}`)}
+                      data-testid={`app-row-${app.app_id}`}
+                    >
+                      {visibleColumnConfigs.map(column => (
+                        <td 
+                          key={column.id} 
+                          className={`p-4 text-sm ${column.align === 'right' ? 'text-right' : column.id === 'deployment_type' ? 'text-center' : ''} ${column.id === 'title' ? 'font-medium text-theme-primary' : 'text-theme-secondary'} ${column.width || ''}`}
+                        >
+                          {renderCellValue(app, column)}
+                        </td>
+                      ))}
+                      <td className="p-4">
+                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => startEditingRow(app, e)}
+                            className="h-7 px-2 text-theme-muted hover:text-green-500 hover:bg-green-500/10"
+                            data-testid={`edit-row-btn-${app.app_id}`}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <ChevronRight className="w-4 h-4 text-theme-faint" />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                ))}
               </tbody>
             </table>
           </div>

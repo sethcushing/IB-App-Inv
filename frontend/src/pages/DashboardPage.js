@@ -64,6 +64,8 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const chartColors = getChartColors(theme);
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState(null);
   const [spendByCategory, setSpendByCategory] = useState([]);

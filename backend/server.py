@@ -194,6 +194,17 @@ async def get_application(app_id: str):
 
 @api_router.post("/applications")
 async def create_application(app: ApplicationCreate):
+    # Check for duplicate by title (case-insensitive)
+    existing = await db.applications.find_one(
+        {"title": {"$regex": f"^{re.escape(app.title)}$", "$options": "i"}},
+        {"_id": 0, "app_id": 1, "title": 1}
+    )
+    if existing:
+        raise HTTPException(
+            status_code=409, 
+            detail=f"Application '{existing['title']}' already exists"
+        )
+    
     app_id = str(uuid.uuid4())
     app_doc = app.model_dump()
     app_doc["app_id"] = app_id

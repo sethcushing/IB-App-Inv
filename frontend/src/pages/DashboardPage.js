@@ -8,9 +8,8 @@ import {
 } from 'recharts';
 import {
   Building2, DollarSign, Users, Cloud, Server, HelpCircle, TrendingUp,
-  AlertTriangle, Search, Filter, RefreshCw, ChevronRight
+  AlertTriangle, Search, Filter, RefreshCw, ChevronRight, Layers
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -37,7 +36,23 @@ const formatNumber = (value) => {
   return value.toString();
 };
 
-const CHART_COLORS = ['#84CC16', '#18181B', '#64748B', '#E2E8F0', '#A3E635'];
+const CHART_COLORS = ['#a3e635', '#60a5fa', '#f472b6', '#fbbf24', '#818cf8'];
+
+const CustomTooltip = ({ active, payload, label, formatter }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-card px-3 py-2 text-sm">
+        <p className="text-white/90 font-medium">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} style={{ color: entry.color }} className="text-sm">
+            {formatter ? formatter(entry.value) : entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -46,7 +61,6 @@ const DashboardPage = () => {
   const [spendByCategory, setSpendByCategory] = useState([]);
   const [appsByCategory, setAppsByCategory] = useState([]);
   const [spendByCostCenter, setSpendByCostCenter] = useState([]);
-  const [usersByCategory, setUsersByCategory] = useState([]);
   const [highSpendLowEngagement, setHighSpendLowEngagement] = useState([]);
   const [executiveSummary, setExecutiveSummary] = useState(null);
   const [filterOptions, setFilterOptions] = useState({});
@@ -70,12 +84,11 @@ const DashboardPage = () => {
         if (value) queryParams.append(key, value);
       });
       
-      const [kpiRes, spendCatRes, appsCatRes, spendCCRes, usersCatRes, hsleRes, summaryRes, filtersRes] = await Promise.all([
+      const [kpiRes, spendCatRes, appsCatRes, spendCCRes, hsleRes, summaryRes, filtersRes] = await Promise.all([
         axios.get(`${API}/dashboard/kpis?${queryParams}`),
         axios.get(`${API}/dashboard/spend-by-category`),
         axios.get(`${API}/dashboard/apps-by-category`),
         axios.get(`${API}/dashboard/spend-by-cost-center`),
-        axios.get(`${API}/dashboard/users-by-category`),
         axios.get(`${API}/dashboard/high-spend-low-engagement?spend_threshold=${spendThreshold[0]}&engagement_threshold=${engagementThreshold[0]}`),
         axios.get(`${API}/dashboard/executive-summary`),
         axios.get(`${API}/filters/options`)
@@ -85,7 +98,6 @@ const DashboardPage = () => {
       setSpendByCategory(spendCatRes.data);
       setAppsByCategory(appsCatRes.data);
       setSpendByCostCenter(spendCCRes.data);
-      setUsersByCategory(usersCatRes.data);
       setHighSpendLowEngagement(hsleRes.data);
       setExecutiveSummary(summaryRes.data);
       setFilterOptions(filtersRes.data);
@@ -122,7 +134,6 @@ const DashboardPage = () => {
     });
   };
 
-  // Navigate to inventory with filter
   const handleCategoryClick = (category) => {
     navigate(`/inventory?category=${encodeURIComponent(category)}`);
   };
@@ -135,7 +146,6 @@ const DashboardPage = () => {
     navigate(`/inventory?deployment_type=${encodeURIComponent(deploymentType)}`);
   };
 
-  // Custom bar click handler
   const handleBarClick = (data, chartType) => {
     if (chartType === 'category') {
       handleCategoryClick(data.category);
@@ -153,7 +163,10 @@ const DashboardPage = () => {
   if (loading && !kpis) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-slate-500">Loading dashboard...</div>
+        <div className="text-white/50 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+          Loading dashboard...
+        </div>
       </div>
     );
   }
@@ -163,18 +176,29 @@ const DashboardPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
             Executive Dashboard
           </h1>
-          <p className="text-slate-500 mt-1">Systems inventory overview and analytics</p>
+          <p className="text-white/50 mt-1">Systems inventory overview and analytics</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchDashboardData} data-testid="refresh-btn">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchDashboardData} 
+            data-testid="refresh-btn"
+            className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
           {(!kpis || kpis.total_apps === 0) && (
-            <Button size="sm" onClick={seedData} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="seed-btn">
+            <Button 
+              size="sm" 
+              onClick={seedData} 
+              data-testid="seed-btn"
+              className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+            >
               Generate Sample Data
             </Button>
           )}
@@ -182,302 +206,300 @@ const DashboardPage = () => {
       </div>
 
       {/* Filters */}
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search apps or vendors..."
-                className="pl-9"
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                data-testid="search-filter"
-              />
-            </div>
-            
-            <Select value={filters.functional_category} onValueChange={(v) => setFilters({ ...filters, functional_category: v === 'all' ? '' : v })}>
-              <SelectTrigger className="w-[180px]" data-testid="category-filter">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {filterOptions.categories?.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.deployment_type} onValueChange={(v) => setFilters({ ...filters, deployment_type: v === 'all' ? '' : v })}>
-              <SelectTrigger className="w-[150px]" data-testid="deployment-filter">
-                <SelectValue placeholder="Deployment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {filterOptions.deployment_types?.map(dt => (
-                  <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v === 'all' ? '' : v })}>
-              <SelectTrigger className="w-[140px]" data-testid="status-filter">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                {filterOptions.statuses?.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="clear-filters">
-              <Filter className="w-4 h-4 mr-1" />
-              Clear
-            </Button>
+      <div className="glass-card p-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Input
+              placeholder="Search apps or vendors..."
+              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-lime-500/50"
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              data-testid="search-filter"
+            />
           </div>
-        </CardContent>
-      </Card>
+          
+          <Select value={filters.functional_category} onValueChange={(v) => setFilters({ ...filters, functional_category: v === 'all' ? '' : v })}>
+            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/70" data-testid="category-filter">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Categories</SelectItem>
+              {filterOptions.categories?.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.deployment_type} onValueChange={(v) => setFilters({ ...filters, deployment_type: v === 'all' ? '' : v })}>
+            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="deployment-filter">
+              <SelectValue placeholder="Deployment" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Types</SelectItem>
+              {filterOptions.deployment_types?.map(dt => (
+                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v === 'all' ? '' : v })}>
+            <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white/70" data-testid="status-filter">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Status</SelectItem>
+              {filterOptions.statuses?.map(s => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={clearFilters} 
+            data-testid="clear-filters"
+            className="text-white/50 hover:text-white hover:bg-white/5"
+          >
+            <Filter className="w-4 h-4 mr-1" />
+            Clear
+          </Button>
+        </div>
+      </div>
 
       {/* Executive Summary */}
       {executiveSummary && (
-        <Card className="border-l-4 border-l-lime-500 bg-lime-50/50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <TrendingUp className="w-5 h-5 text-lime-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-zinc-700 leading-relaxed" data-testid="executive-summary">
-                {executiveSummary.summary}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-4 border-l-4 border-l-lime-500 bg-gradient-to-r from-lime-500/10 to-transparent">
+          <div className="flex items-start gap-3">
+            <TrendingUp className="w-5 h-5 text-lime-400 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-white/80 leading-relaxed" data-testid="executive-summary">
+              {executiveSummary.summary}
+            </p>
+          </div>
+        </div>
       )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="kpi-card" data-testid="kpi-total-apps">
+        <div className="kpi-card" data-testid="kpi-total-apps">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Total Applications</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+              <p className="text-sm font-medium text-white/50">Total Applications</p>
+              <p className="text-3xl font-heading font-bold text-white mt-1">
                 {formatNumber(kpis?.total_apps || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-slate-600" />
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white/50" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="kpi-card-accent" data-testid="kpi-total-spend">
-          <div className="flex items-start justify-between">
+        <div className="kpi-card-accent" data-testid="kpi-total-spend">
+          <div className="flex items-start justify-between relative z-10">
             <div>
-              <p className="text-sm font-medium text-slate-500">Contract Annual Spend</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+              <p className="text-sm font-medium text-lime-400/70">Contract Annual Spend</p>
+              <p className="text-3xl font-heading font-bold text-white mt-1">
                 {formatCurrency(kpis?.total_contract_spend || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-lime-600" />
+            <div className="w-10 h-10 rounded-xl bg-lime-500/20 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-lime-400" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="kpi-card" data-testid="kpi-ytd-expense">
+        <div className="kpi-card" data-testid="kpi-ytd-expense">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Fiscal YTD Expense</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+              <p className="text-sm font-medium text-white/50">Fiscal YTD Expense</p>
+              <p className="text-3xl font-heading font-bold text-white mt-1">
                 {formatCurrency(kpis?.total_ytd_expense || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-slate-600" />
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-white/50" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="kpi-card" data-testid="kpi-engaged-users">
+        <div className="kpi-card" data-testid="kpi-engaged-users">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Engaged Users</p>
-              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+              <p className="text-sm font-medium text-white/50">Engaged Users</p>
+              <p className="text-3xl font-heading font-bold text-white mt-1">
                 {formatNumber(kpis?.total_engaged_users || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-slate-600" />
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+              <Users className="w-5 h-5 text-white/50" />
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Deployment Breakdown - Clickable */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Cloud', value: kpis?.deployment_breakdown?.Cloud || 0, icon: Cloud, color: 'bg-lime-100 text-lime-700 hover:bg-lime-200' },
-          { label: 'On-Prem', value: kpis?.deployment_breakdown?.['On-Prem'] || 0, icon: Server, color: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200' },
-          { label: 'Hybrid', value: kpis?.deployment_breakdown?.Hybrid || 0, icon: Building2, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
-          { label: 'Unknown', value: kpis?.deployment_breakdown?.Unknown || 0, icon: HelpCircle, color: 'bg-slate-100 text-slate-500 hover:bg-slate-200' },
+          { label: 'Cloud', value: kpis?.deployment_breakdown?.Cloud || 0, icon: Cloud, color: 'lime' },
+          { label: 'On-Prem', value: kpis?.deployment_breakdown?.['On-Prem'] || 0, icon: Server, color: 'blue' },
+          { label: 'Hybrid', value: kpis?.deployment_breakdown?.Hybrid || 0, icon: Layers, color: 'purple' },
+          { label: 'Unknown', value: kpis?.deployment_breakdown?.Unknown || 0, icon: HelpCircle, color: 'gray' },
         ].map(item => (
-          <Card 
+          <div 
             key={item.label} 
-            className="border-slate-200 cursor-pointer transition-all hover:shadow-md"
+            className="glass-card-hover p-4 cursor-pointer"
             onClick={() => handleDeploymentClick(item.label)}
             data-testid={`deployment-${item.label.toLowerCase()}`}
           >
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${item.color}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                item.color === 'lime' ? 'bg-lime-500/20 text-lime-400' :
+                item.color === 'blue' ? 'bg-blue-500/20 text-blue-400' :
+                item.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
+                'bg-white/5 text-white/40'
+              }`}>
                 <item.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-heading font-bold text-zinc-900">{item.value}</p>
-                <p className="text-xs text-slate-500">{item.label}</p>
+                <p className="text-2xl font-heading font-bold text-white">{item.value}</p>
+                <p className="text-xs text-white/40">{item.label}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spend by Category - Clickable */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-heading">Spend by Category</CardTitle>
-            <CardDescription>Click a bar to view applications in that category</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={spendByCategory} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="category" type="category" tick={{ fontSize: 11 }} width={100} />
-                  <Tooltip formatter={(v) => formatCurrency(v)} />
-                  <Bar 
-                    dataKey="total_spend" 
-                    fill="#84CC16" 
-                    radius={[0, 4, 4, 0]} 
-                    cursor="pointer"
-                    onClick={(data) => handleBarClick(data, 'category')}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-white">Spend by Category</h3>
+            <p className="text-xs text-white/40 mt-1">Click a bar to view applications</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={spendByCategory} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
+                <YAxis dataKey="category" type="category" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} width={100} />
+                <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
+                <Bar 
+                  dataKey="total_spend" 
+                  fill="#a3e635" 
+                  radius={[0, 6, 6, 0]} 
+                  cursor="pointer"
+                  onClick={(data) => handleBarClick(data, 'category')}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Deployment Pie Chart - Clickable */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-heading">Deployment Distribution</CardTitle>
-            <CardDescription>Click a segment to view applications</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={deploymentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                    cursor="pointer"
-                    onClick={(data) => handleDeploymentClick(data.name)}
-                  >
-                    {deploymentData.map((_, index) => (
-                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-white">Deployment Distribution</h3>
+            <p className="text-xs text-white/40 mt-1">Click a segment to filter</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={deploymentData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                  cursor="pointer"
+                  onClick={(data) => handleDeploymentClick(data.name)}
+                >
+                  {deploymentData.map((_, index) => (
+                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Apps by Category - Clickable */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-heading">Apps by Category</CardTitle>
-            <CardDescription>Click a bar to view applications</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={appsByCategory} margin={{ left: 20, right: 20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis 
-                    dataKey="category" 
-                    tick={{ fontSize: 10, angle: -45, textAnchor: 'end' }} 
-                    interval={0}
-                    height={80}
-                  />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar 
-                    dataKey="count" 
-                    fill="#18181B" 
-                    radius={[4, 4, 0, 0]} 
-                    cursor="pointer"
-                    onClick={(data) => handleBarClick(data, 'category')}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-white">Apps by Category</h3>
+            <p className="text-xs text-white/40 mt-1">Click a bar to view applications</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={appsByCategory} margin={{ left: 20, right: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis 
+                  dataKey="category" 
+                  tick={{ fontSize: 10, angle: -45, textAnchor: 'end', fill: 'rgba(255,255,255,0.5)' }} 
+                  interval={0}
+                  height={80}
+                />
+                <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar 
+                  dataKey="count" 
+                  fill="#60a5fa" 
+                  radius={[6, 6, 0, 0]} 
+                  cursor="pointer"
+                  onClick={(data) => handleBarClick(data, 'category')}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Spend by Cost Center - Clickable */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-heading">Spend by Cost Center</CardTitle>
-            <CardDescription>Click a bar to view applications in that cost center</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={spendByCostCenter} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11 }} width={100} />
-                  <Tooltip formatter={(v) => formatCurrency(v)} />
-                  <Bar 
-                    dataKey="total_spend" 
-                    fill="#64748B" 
-                    radius={[0, 4, 4, 0]} 
-                    cursor="pointer"
-                    onClick={(data) => handleBarClick(data, 'costCenter')}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-white">Spend by Cost Center</h3>
+            <p className="text-xs text-white/40 mt-1">Click a bar to view applications</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={spendByCostCenter} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
+                <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} width={100} />
+                <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
+                <Bar 
+                  dataKey="total_spend" 
+                  fill="#f472b6" 
+                  radius={[0, 6, 6, 0]} 
+                  cursor="pointer"
+                  onClick={(data) => handleBarClick(data, 'costCenter')}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       {/* High Spend / Low Engagement Section */}
-      <Card className="border-slate-200">
-        <CardHeader>
+      <div className="glass-card overflow-hidden">
+        <div className="p-6 border-b border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-lg font-heading flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <h3 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
                 High Spend / Low Engagement
-              </CardTitle>
-              <CardDescription>Applications with high annual spend but low user engagement</CardDescription>
+              </h3>
+              <p className="text-xs text-white/40 mt-1">Applications needing review</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 whitespace-nowrap">Spend &gt;</span>
+                <span className="text-white/40 whitespace-nowrap">Spend &gt;</span>
                 <div className="w-32">
                   <Slider
                     value={spendThreshold}
@@ -485,12 +507,13 @@ const DashboardPage = () => {
                     min={10000}
                     max={500000}
                     step={10000}
+                    className="[&_[role=slider]]:bg-lime-400"
                   />
                 </div>
-                <span className="text-zinc-900 font-medium">{formatCurrency(spendThreshold[0])}</span>
+                <span className="text-lime-400 font-medium">{formatCurrency(spendThreshold[0])}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 whitespace-nowrap">Users &lt;</span>
+                <span className="text-white/40 whitespace-nowrap">Users &lt;</span>
                 <div className="w-32">
                   <Slider
                     value={engagementThreshold}
@@ -498,65 +521,69 @@ const DashboardPage = () => {
                     min={10}
                     max={500}
                     step={10}
+                    className="[&_[role=slider]]:bg-lime-400"
                   />
                 </div>
-                <span className="text-zinc-900 font-medium">{engagementThreshold[0]}</span>
+                <span className="text-lime-400 font-medium">{engagementThreshold[0]}</span>
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {highSpendLowEngagement.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No applications match the current thresholds</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="table-header">
-                    <th className="text-left p-3">Application</th>
-                    <th className="text-left p-3">Vendor</th>
-                    <th className="text-left p-3">Category</th>
-                    <th className="text-right p-3">Annual Spend</th>
-                    <th className="text-right p-3">Engaged Users</th>
-                    <th className="text-center p-3">Deployment</th>
-                    <th className="text-center p-3"></th>
+        </div>
+        
+        {highSpendLowEngagement.length === 0 ? (
+          <p className="text-white/40 text-center py-8">No applications match the current thresholds</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="table-header">
+                  <th className="text-left p-4">Application</th>
+                  <th className="text-left p-4">Vendor</th>
+                  <th className="text-left p-4">Category</th>
+                  <th className="text-right p-4">Annual Spend</th>
+                  <th className="text-right p-4">Engaged Users</th>
+                  <th className="text-center p-4">Deployment</th>
+                  <th className="text-center p-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {highSpendLowEngagement.map((app) => (
+                  <tr 
+                    key={app.app_id} 
+                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/applications/${app.app_id}`)}
+                    data-testid={`hsle-row-${app.app_id}`}
+                  >
+                    <td className="p-4">
+                      <p className="font-medium text-white">{app.title}</p>
+                    </td>
+                    <td className="p-4 text-white/60">{app.vendor || '-'}</td>
+                    <td className="p-4 text-white/60">{app.functional_category || '-'}</td>
+                    <td className="p-4 text-right font-mono text-red-400 font-medium">
+                      {formatCurrency(app.contract_annual_spend || 0)}
+                    </td>
+                    <td className="p-4 text-right font-mono text-amber-400">
+                      {app.engaged_users || 0}
+                    </td>
+                    <td className="p-4 text-center">
+                      <Badge className={`text-xs ${
+                        app.deployment_type === 'Cloud' ? 'badge-lime' : 
+                        app.deployment_type === 'On-Prem' ? 'badge-blue' : 
+                        'bg-white/10 text-white/50'
+                      }`}>
+                        {app.deployment_type}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-center">
+                      <ChevronRight className="w-4 h-4 text-white/30 inline" />
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {highSpendLowEngagement.map((app) => (
-                    <tr 
-                      key={app.app_id} 
-                      className="hover:bg-slate-50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/applications/${app.app_id}`)}
-                      data-testid={`hsle-row-${app.app_id}`}
-                    >
-                      <td className="p-3">
-                        <p className="font-medium text-zinc-900">{app.title}</p>
-                      </td>
-                      <td className="p-3 text-slate-600">{app.vendor || '-'}</td>
-                      <td className="p-3 text-slate-600">{app.functional_category || '-'}</td>
-                      <td className="p-3 text-right font-mono text-red-600 font-medium">
-                        {formatCurrency(app.contract_annual_spend || 0)}
-                      </td>
-                      <td className="p-3 text-right font-mono text-amber-600">
-                        {app.engaged_users || 0}
-                      </td>
-                      <td className="p-3 text-center">
-                        <Badge variant={app.deployment_type === 'Cloud' ? 'default' : 'secondary'} className="text-xs">
-                          {app.deployment_type}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        <ChevronRight className="w-4 h-4 text-slate-400 inline" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

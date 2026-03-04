@@ -430,6 +430,19 @@ code, .font-mono {
 .text-theme-muted { color: var(--text-muted); }
 .text-theme-faint { color: var(--text-faint); }
 
+/* CSS Variable values for JS access */
+:root {
+    --text-muted-raw: rgba(255, 255, 255, 0.5);
+    --glass-border-raw: rgba(255, 255, 255, 0.08);
+    --text-faint-raw: rgba(255, 255, 255, 0.3);
+}
+
+.light {
+    --text-muted-raw: rgba(15, 23, 42, 0.5);
+    --glass-border-raw: rgba(0, 0, 0, 0.08);
+    --text-faint-raw: rgba(15, 23, 42, 0.3);
+}
+
 /* Theme toggle button */
 .theme-toggle-btn {
     @apply p-2 rounded-lg transition-all;

@@ -92,6 +92,8 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
 const ApplicationDetailPage = () => {
   const { appId } = useParams();
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const chartColors = getChartColors(theme);
   const [loading, setLoading] = useState(true);
   const [app, setApp] = useState(null);
   const [requests, setRequests] = useState([]);

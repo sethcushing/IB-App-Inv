@@ -7,9 +7,8 @@ import {
 } from 'recharts';
 import {
   ArrowLeft, Building2, DollarSign, Users, Database, User, Mail,
-  Edit2, Save, X, Send, ChevronRight, TrendingUp, TrendingDown
+  Edit2, Save, X, Send, ChevronRight, TrendingUp, TrendingDown, Info
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -45,16 +44,14 @@ const formatCurrencyShort = (value) => {
   return `$${value}`;
 };
 
-// Generate mock YoY data based on current values
 const generateYoYData = (app) => {
   const currentSpend = app?.contract_annual_spend || 0;
   const prevSpend = app?.prev_fiscal_year_expense_total || currentSpend * 0.9;
   const currentUsers = app?.engaged_users || 0;
   
-  // Generate 5 years of trend data with some variance
   const years = ['2020', '2021', '2022', '2023', '2024'];
-  const baseSpend = prevSpend * 0.7;
-  const baseUsers = Math.floor(currentUsers * 0.5);
+  const baseSpend = prevSpend * 0.7 || 10000;
+  const baseUsers = Math.floor(currentUsers * 0.5) || 10;
   
   return years.map((year, index) => {
     const growthFactor = 1 + (index * 0.15) + (Math.random() * 0.1 - 0.05);
@@ -66,6 +63,22 @@ const generateYoYData = (app) => {
       users: Math.round(baseUsers * userGrowth),
     };
   });
+};
+
+const CustomTooltip = ({ active, payload, label, formatter }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-card px-3 py-2 text-sm">
+        <p className="text-white/90 font-medium">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} style={{ color: entry.color }} className="text-sm">
+            {entry.name}: {formatter ? formatter(entry.value) : entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 const ApplicationDetailPage = () => {
@@ -169,35 +182,33 @@ const ApplicationDetailPage = () => {
     setRequestModalOpen(true);
   };
 
-  const getStatusBadgeVariant = (status) => {
+  const getStatusBadgeClass = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved': return 'default';
-      case 'deprecated': return 'destructive';
-      case 'under_review': return 'secondary';
-      default: return 'outline';
+      case 'approved': return 'badge-lime';
+      case 'deprecated': case 'retired': return 'badge-red';
+      case 'under_review': case 'in_review': return 'badge-amber';
+      default: return 'bg-white/10 text-white/50 border-white/10';
     }
   };
 
   const getDeploymentBadgeClass = (type) => {
     switch (type) {
-      case 'Cloud': return 'bg-lime-100 text-lime-700';
-      case 'On-Prem': return 'bg-zinc-100 text-zinc-700';
-      case 'Hybrid': return 'bg-blue-100 text-blue-700';
-      default: return 'bg-slate-100 text-slate-500';
+      case 'Cloud': return 'badge-lime';
+      case 'On-Prem': return 'badge-blue';
+      case 'Hybrid': return 'bg-purple-500/15 border-purple-500/30 text-purple-400';
+      default: return 'bg-white/10 text-white/40 border-white/10';
     }
   };
 
   const getRequestStatusColor = (status) => {
     switch (status) {
-      case 'Completed': return 'bg-lime-100 text-lime-700';
-      case 'Sent': return 'bg-blue-100 text-blue-700';
-      case 'Awaiting Response': return 'bg-amber-100 text-amber-700';
-      case 'Draft': return 'bg-slate-100 text-slate-600';
-      default: return 'bg-slate-100 text-slate-600';
+      case 'Completed': return 'badge-lime';
+      case 'Sent': return 'badge-blue';
+      case 'Awaiting Response': return 'badge-amber';
+      default: return 'bg-white/10 text-white/50';
     }
   };
 
-  // Calculate YoY changes
   const calculateYoYChange = () => {
     if (yoyData.length < 2) return { spend: 0, users: 0 };
     const current = yoyData[yoyData.length - 1];
@@ -213,7 +224,10 @@ const ApplicationDetailPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-slate-500">Loading application...</div>
+        <div className="text-white/50 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+          Loading application...
+        </div>
       </div>
     );
   }
@@ -227,7 +241,7 @@ const ApplicationDetailPage = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="w-fit -ml-2"
+          className="w-fit -ml-2 text-white/50 hover:text-white hover:bg-white/5"
           onClick={() => navigate('/inventory')}
           data-testid="back-to-inventory"
         >
@@ -237,22 +251,22 @@ const ApplicationDetailPage = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 bg-zinc-900 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-7 h-7 text-lime-500" />
+            <div className="w-14 h-14 bg-gradient-to-br from-lime-400 to-lime-600 rounded-2xl flex items-center justify-center shadow-lg shadow-lime-500/20 flex-shrink-0">
+              <Building2 className="w-7 h-7 text-zinc-900" />
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
+                <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
                   {app.title}
                 </h1>
-                <Badge variant={getStatusBadgeVariant(app.status)} className="capitalize">
+                <Badge className={`capitalize ${getStatusBadgeClass(app.status)}`}>
                   {app.status || 'unknown'}
                 </Badge>
               </div>
-              <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
+              <div className="flex items-center gap-3 mt-2 text-sm text-white/50">
                 <span>{app.vendor || 'Unknown Vendor'}</span>
                 <span>•</span>
-                <Badge variant="outline" className={getDeploymentBadgeClass(app.deployment_type)}>
+                <Badge className={getDeploymentBadgeClass(app.deployment_type)}>
                   {app.deployment_type || 'Unknown'}
                 </Badge>
               </div>
@@ -262,22 +276,44 @@ const ApplicationDetailPage = () => {
           <div className="flex gap-2">
             {editing ? (
               <>
-                <Button variant="outline" size="sm" onClick={() => { setEditing(false); setEditForm(app); }} data-testid="cancel-edit">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setEditing(false); setEditForm(app); }} 
+                  data-testid="cancel-edit"
+                  className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                >
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSave} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="save-edit">
+                <Button 
+                  size="sm" 
+                  onClick={handleSave} 
+                  data-testid="save-edit"
+                  className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+                >
                   <Save className="w-4 h-4 mr-2" />
                   Save
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="edit-app">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setEditing(true)} 
+                  data-testid="edit-app"
+                  className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                >
                   <Edit2 className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
-                <Button size="sm" onClick={openRequestModal} className="bg-zinc-900 hover:bg-zinc-800" data-testid="request-info-btn">
+                <Button 
+                  size="sm" 
+                  onClick={openRequestModal} 
+                  data-testid="request-info-btn"
+                  className="bg-white/10 hover:bg-white/20 text-white"
+                >
                   <Mail className="w-4 h-4 mr-2" />
                   Request Info
                 </Button>
@@ -289,45 +325,51 @@ const ApplicationDetailPage = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-slate-100">
-          <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-          <TabsTrigger value="trends" data-testid="tab-trends">YoY Trends</TabsTrigger>
-          <TabsTrigger value="usage" data-testid="tab-usage">Usage</TabsTrigger>
-          <TabsTrigger value="financials" data-testid="tab-financials">Financials</TabsTrigger>
-          <TabsTrigger value="ownership" data-testid="tab-ownership">Ownership</TabsTrigger>
-          <TabsTrigger value="requests" data-testid="tab-requests">Requests ({requests.length})</TabsTrigger>
+        <TabsList className="bg-white/5 border border-white/10 p-1">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50" data-testid="tab-overview">Overview</TabsTrigger>
+          <TabsTrigger value="trends" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50" data-testid="tab-trends">YoY Trends</TabsTrigger>
+          <TabsTrigger value="usage" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50" data-testid="tab-usage">Usage</TabsTrigger>
+          <TabsTrigger value="financials" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50" data-testid="tab-financials">Financials</TabsTrigger>
+          <TabsTrigger value="ownership" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50" data-testid="tab-ownership">Ownership</TabsTrigger>
+          <TabsTrigger value="requests" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50" data-testid="tab-requests">Requests ({requests.length})</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">General Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-heading font-semibold text-white mb-4">General Information</h3>
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-slate-500">Description</Label>
+                  <Label className="text-white/50 text-xs">Description</Label>
                   {editing ? (
-                    <Textarea value={editForm.short_description || ''} onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })} className="mt-1" />
+                    <Textarea 
+                      value={editForm.short_description || ''} 
+                      onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })} 
+                      className="mt-1 bg-white/5 border-white/10 text-white" 
+                    />
                   ) : (
-                    <p className="text-zinc-900 mt-1">{app.short_description || 'No description available'}</p>
+                    <p className="text-white/80 mt-1 text-sm">{app.short_description || 'No description available'}</p>
                   )}
                 </div>
                 <div>
-                  <Label className="text-slate-500">Functional Category</Label>
+                  <Label className="text-white/50 text-xs">Functional Category</Label>
                   {editing ? (
-                    <Input value={editForm.functional_category || ''} onChange={(e) => setEditForm({ ...editForm, functional_category: e.target.value })} className="mt-1" />
+                    <Input 
+                      value={editForm.functional_category || ''} 
+                      onChange={(e) => setEditForm({ ...editForm, functional_category: e.target.value })} 
+                      className="mt-1 bg-white/5 border-white/10 text-white" 
+                    />
                   ) : (
-                    <p className="text-zinc-900 mt-1">{app.functional_category || '-'}</p>
+                    <p className="text-white/80 mt-1">{app.functional_category || '-'}</p>
                   )}
                 </div>
                 <div>
-                  <Label className="text-slate-500">Deployment Type</Label>
+                  <Label className="text-white/50 text-xs">Deployment Type</Label>
                   {editing ? (
                     <Select value={editForm.deployment_type || 'Unknown'} onValueChange={(v) => setEditForm({ ...editForm, deployment_type: v })}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-white/10">
                         <SelectItem value="Cloud">Cloud</SelectItem>
                         <SelectItem value="On-Prem">On-Prem</SelectItem>
                         <SelectItem value="Hybrid">Hybrid</SelectItem>
@@ -335,377 +377,345 @@ const ApplicationDetailPage = () => {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant="outline" className={`mt-1 ${getDeploymentBadgeClass(app.deployment_type)}`}>
+                    <Badge className={`mt-1 ${getDeploymentBadgeClass(app.deployment_type)}`}>
                       {app.deployment_type || 'Unknown'}
                     </Badge>
                   )}
                 </div>
                 <div>
-                  <Label className="text-slate-500">Cost Center</Label>
+                  <Label className="text-white/50 text-xs">Cost Center</Label>
                   {editing ? (
-                    <Input value={editForm.cost_center_primary || ''} onChange={(e) => setEditForm({ ...editForm, cost_center_primary: e.target.value })} className="mt-1" />
+                    <Input 
+                      value={editForm.cost_center_primary || ''} 
+                      onChange={(e) => setEditForm({ ...editForm, cost_center_primary: e.target.value })} 
+                      className="mt-1 bg-white/5 border-white/10 text-white" 
+                    />
                   ) : (
-                    <p className="text-zinc-900 mt-1">{app.cost_center_primary || '-'}</p>
+                    <p className="text-white/80 mt-1">{app.cost_center_primary || '-'}</p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Stats</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-lime-50 rounded-lg">
-                    <p className="text-sm text-slate-500">Annual Spend</p>
-                    <p className="text-xl font-heading font-bold text-zinc-900">{formatCurrency(app.contract_annual_spend)}</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-slate-500">YTD Expense</p>
-                    <p className="text-xl font-heading font-bold text-zinc-900">{formatCurrency(app.fiscal_ytd_expense_total)}</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-slate-500">Engaged Users</p>
-                    <p className="text-xl font-heading font-bold text-zinc-900">{app.engaged_users || 0}</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-slate-500">Provisioned</p>
-                    <p className="text-xl font-heading font-bold text-zinc-900">{app.provisioned_users || 0}</p>
-                  </div>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-heading font-semibold text-white mb-4">Quick Stats</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-lime-500/10 border border-lime-500/20">
+                  <p className="text-sm text-lime-400/70">Annual Spend</p>
+                  <p className="text-xl font-heading font-bold text-white mt-1">{formatCurrency(app.contract_annual_spend)}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-sm text-white/50">YTD Expense</p>
+                  <p className="text-xl font-heading font-bold text-white mt-1">{formatCurrency(app.fiscal_ytd_expense_total)}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-sm text-white/50">Engaged Users</p>
+                  <p className="text-xl font-heading font-bold text-white mt-1">{app.engaged_users || 0}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-sm text-white/50">Provisioned</p>
+                  <p className="text-xl font-heading font-bold text-white mt-1">{app.provisioned_users || 0}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
         {/* YoY Trends Tab */}
         <TabsContent value="trends" className="space-y-6">
-          <Card className="border-l-4 border-l-lime-500">
-            <CardContent className="p-4">
-              <p className="text-sm text-slate-600">
-                <strong>Note:</strong> Year-over-year trend data shown below is generated for demonstration purposes. 
+          <div className="glass-card p-4 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-500/10 to-transparent">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-white/70">
+                Year-over-year trend data shown below is generated for demonstration purposes. 
                 Actual historical data would come from your data source.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* YoY Change Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="border-slate-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">Spend YoY Change</p>
-                    <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                      {yoyChange.spend > 0 ? '+' : ''}{yoyChange.spend}%
-                    </p>
-                  </div>
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${parseFloat(yoyChange.spend) > 0 ? 'bg-red-100' : 'bg-lime-100'}`}>
-                    {parseFloat(yoyChange.spend) > 0 ? (
-                      <TrendingUp className="w-6 h-6 text-red-600" />
-                    ) : (
-                      <TrendingDown className="w-6 h-6 text-lime-600" />
-                    )}
-                  </div>
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white/50">Spend YoY Change</p>
+                  <p className="text-3xl font-heading font-bold text-white mt-1">
+                    {yoyChange.spend > 0 ? '+' : ''}{yoyChange.spend}%
+                  </p>
                 </div>
-                <p className="text-xs text-slate-400 mt-2">vs. previous year</p>
-              </CardContent>
-            </Card>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${parseFloat(yoyChange.spend) > 0 ? 'bg-red-500/20' : 'bg-lime-500/20'}`}>
+                  {parseFloat(yoyChange.spend) > 0 ? (
+                    <TrendingUp className="w-6 h-6 text-red-400" />
+                  ) : (
+                    <TrendingDown className="w-6 h-6 text-lime-400" />
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-white/30 mt-2">vs. previous year</p>
+            </div>
 
-            <Card className="border-slate-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">Users YoY Change</p>
-                    <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                      {yoyChange.users > 0 ? '+' : ''}{yoyChange.users}%
-                    </p>
-                  </div>
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${parseFloat(yoyChange.users) > 0 ? 'bg-lime-100' : 'bg-amber-100'}`}>
-                    {parseFloat(yoyChange.users) > 0 ? (
-                      <TrendingUp className="w-6 h-6 text-lime-600" />
-                    ) : (
-                      <TrendingDown className="w-6 h-6 text-amber-600" />
-                    )}
-                  </div>
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white/50">Users YoY Change</p>
+                  <p className="text-3xl font-heading font-bold text-white mt-1">
+                    {yoyChange.users > 0 ? '+' : ''}{yoyChange.users}%
+                  </p>
                 </div>
-                <p className="text-xs text-slate-400 mt-2">vs. previous year</p>
-              </CardContent>
-            </Card>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${parseFloat(yoyChange.users) > 0 ? 'bg-lime-500/20' : 'bg-amber-500/20'}`}>
+                  {parseFloat(yoyChange.users) > 0 ? (
+                    <TrendingUp className="w-6 h-6 text-lime-400" />
+                  ) : (
+                    <TrendingDown className="w-6 h-6 text-amber-400" />
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-white/30 mt-2">vs. previous year</p>
+            </div>
           </div>
 
           {/* Spend Trend Chart */}
-          <Card className="border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Spend Trend (5 Year)</CardTitle>
-              <CardDescription>Annual contract spend over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                    <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v) => formatCurrency(v)} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="spend" 
-                      stroke="#84CC16" 
-                      strokeWidth={3}
-                      dot={{ fill: '#84CC16', strokeWidth: 2, r: 5 }}
-                      activeDot={{ r: 7 }}
-                      name="Annual Spend"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-heading font-semibold text-white">Spend Trend (5 Year)</h3>
+              <p className="text-xs text-white/40 mt-1">Annual contract spend over time</p>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} />
+                  <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="spend" 
+                    stroke="#a3e635" 
+                    strokeWidth={3}
+                    dot={{ fill: '#a3e635', strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Annual Spend"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
           {/* Users Trend Chart */}
-          <Card className="border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">User Engagement Trend (5 Year)</CardTitle>
-              <CardDescription>Engaged users over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="users" 
-                      stroke="#18181B" 
-                      strokeWidth={3}
-                      dot={{ fill: '#18181B', strokeWidth: 2, r: 5 }}
-                      activeDot={{ r: 7 }}
-                      name="Engaged Users"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Combined Chart */}
-          <Card className="border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Spend vs Users Comparison</CardTitle>
-              <CardDescription>Cost efficiency over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={yoyData} margin={{ left: 20, right: 60, top: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                    <YAxis yAxisId="left" tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value, name) => name === 'Annual Spend' ? formatCurrency(value) : value} />
-                    <Legend />
-                    <Line 
-                      yAxisId="left"
-                      type="monotone" 
-                      dataKey="spend" 
-                      stroke="#84CC16" 
-                      strokeWidth={2}
-                      dot={{ fill: '#84CC16', r: 4 }}
-                      name="Annual Spend"
-                    />
-                    <Line 
-                      yAxisId="right"
-                      type="monotone" 
-                      dataKey="users" 
-                      stroke="#64748B" 
-                      strokeWidth={2}
-                      dot={{ fill: '#64748B', r: 4 }}
-                      name="Engaged Users"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-heading font-semibold text-white">User Engagement Trend (5 Year)</h3>
+              <p className="text-xs text-white/40 mt-1">Engaged users over time</p>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} />
+                  <YAxis tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="users" 
+                    stroke="#60a5fa" 
+                    strokeWidth={3}
+                    dot={{ fill: '#60a5fa', strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Engaged Users"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Usage Tab */}
         <TabsContent value="usage">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Usage Metrics</CardTitle>
-              <CardDescription>User engagement and access statistics</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                {[
-                  { label: 'Engaged Users', field: 'engaged_users', color: 'lime' },
-                  { label: 'Provisioned Users', field: 'provisioned_users', color: 'slate' },
-                  { label: 'SSO Access', field: 'users_with_sso_access', color: 'slate' },
-                  { label: 'SSO Logins', field: 'users_logging_in_via_sso', color: 'slate' },
-                ].map(({ label, field, color }) => (
-                  <div key={field} className={`text-center p-4 bg-${color}-50 rounded-lg`}>
-                    <Users className={`w-8 h-8 text-${color}-600 mx-auto mb-2`} />
-                    <p className="text-3xl font-heading font-bold text-zinc-900">
-                      {editing ? (
-                        <Input
-                          type="number"
-                          value={editForm[field] || 0}
-                          onChange={(e) => setEditForm({ ...editForm, [field]: parseInt(e.target.value) || 0 })}
-                          className="text-center"
-                        />
-                      ) : (
-                        app[field] || 0
-                      )}
-                    </p>
-                    <p className="text-sm text-slate-500">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-heading font-semibold text-white mb-2">Usage Metrics</h3>
+            <p className="text-xs text-white/40 mb-6">User engagement and access statistics</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              {[
+                { label: 'Engaged Users', field: 'engaged_users', color: 'lime' },
+                { label: 'Provisioned Users', field: 'provisioned_users', color: 'blue' },
+                { label: 'SSO Access', field: 'users_with_sso_access', color: 'purple' },
+                { label: 'SSO Logins', field: 'users_logging_in_via_sso', color: 'pink' },
+              ].map(({ label, field, color }) => (
+                <div key={field} className={`text-center p-4 rounded-xl bg-${color === 'lime' ? 'lime' : color === 'blue' ? 'blue' : color === 'purple' ? 'purple' : 'pink'}-500/10 border border-${color === 'lime' ? 'lime' : color === 'blue' ? 'blue' : color === 'purple' ? 'purple' : 'pink'}-500/20`}>
+                  <Users className={`w-8 h-8 mx-auto mb-2 text-${color === 'lime' ? 'lime' : color === 'blue' ? 'blue' : color === 'purple' ? 'purple' : 'pink'}-400`} />
+                  <p className="text-3xl font-heading font-bold text-white">
+                    {editing ? (
+                      <Input
+                        type="number"
+                        value={editForm[field] || 0}
+                        onChange={(e) => setEditForm({ ...editForm, [field]: parseInt(e.target.value) || 0 })}
+                        className="text-center bg-white/5 border-white/10 text-white"
+                      />
+                    ) : (
+                      app[field] || 0
+                    )}
+                  </p>
+                  <p className="text-sm text-white/50 mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </TabsContent>
 
         {/* Financials Tab */}
         <TabsContent value="financials">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Financial Information</CardTitle>
-              <CardDescription>Spend and expense tracking</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="p-6 bg-lime-50 border border-lime-200 rounded-lg">
-                  <DollarSign className="w-8 h-8 text-lime-600 mb-2" />
-                  <p className="text-sm text-slate-500 mb-1">Contract Annual Spend</p>
-                  {editing ? (
-                    <Input type="number" value={editForm.contract_annual_spend || 0} onChange={(e) => setEditForm({ ...editForm, contract_annual_spend: parseFloat(e.target.value) || 0 })} />
-                  ) : (
-                    <p className="text-2xl font-heading font-bold text-zinc-900">{formatCurrency(app.contract_annual_spend)}</p>
-                  )}
-                </div>
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg">
-                  <DollarSign className="w-8 h-8 text-slate-600 mb-2" />
-                  <p className="text-sm text-slate-500 mb-1">Fiscal YTD Expense</p>
-                  {editing ? (
-                    <Input type="number" value={editForm.fiscal_ytd_expense_total || 0} onChange={(e) => setEditForm({ ...editForm, fiscal_ytd_expense_total: parseFloat(e.target.value) || 0 })} />
-                  ) : (
-                    <p className="text-2xl font-heading font-bold text-zinc-900">{formatCurrency(app.fiscal_ytd_expense_total)}</p>
-                  )}
-                </div>
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg">
-                  <DollarSign className="w-8 h-8 text-slate-600 mb-2" />
-                  <p className="text-sm text-slate-500 mb-1">Prev Fiscal Year</p>
-                  {editing ? (
-                    <Input type="number" value={editForm.prev_fiscal_year_expense_total || 0} onChange={(e) => setEditForm({ ...editForm, prev_fiscal_year_expense_total: parseFloat(e.target.value) || 0 })} />
-                  ) : (
-                    <p className="text-2xl font-heading font-bold text-zinc-900">{formatCurrency(app.prev_fiscal_year_expense_total)}</p>
-                  )}
-                </div>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-heading font-semibold text-white mb-2">Financial Information</h3>
+            <p className="text-xs text-white/40 mb-6">Spend and expense tracking</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="p-6 rounded-xl bg-lime-500/10 border border-lime-500/20">
+                <DollarSign className="w-8 h-8 text-lime-400 mb-2" />
+                <p className="text-sm text-lime-400/70 mb-1">Contract Annual Spend</p>
+                {editing ? (
+                  <Input 
+                    type="number" 
+                    value={editForm.contract_annual_spend || 0} 
+                    onChange={(e) => setEditForm({ ...editForm, contract_annual_spend: parseFloat(e.target.value) || 0 })} 
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                ) : (
+                  <p className="text-2xl font-heading font-bold text-white">{formatCurrency(app.contract_annual_spend)}</p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+              <div className="p-6 rounded-xl bg-white/5 border border-white/10">
+                <DollarSign className="w-8 h-8 text-white/50 mb-2" />
+                <p className="text-sm text-white/50 mb-1">Fiscal YTD Expense</p>
+                {editing ? (
+                  <Input 
+                    type="number" 
+                    value={editForm.fiscal_ytd_expense_total || 0} 
+                    onChange={(e) => setEditForm({ ...editForm, fiscal_ytd_expense_total: parseFloat(e.target.value) || 0 })} 
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                ) : (
+                  <p className="text-2xl font-heading font-bold text-white">{formatCurrency(app.fiscal_ytd_expense_total)}</p>
+                )}
+              </div>
+              <div className="p-6 rounded-xl bg-white/5 border border-white/10">
+                <DollarSign className="w-8 h-8 text-white/50 mb-2" />
+                <p className="text-sm text-white/50 mb-1">Prev Fiscal Year</p>
+                {editing ? (
+                  <Input 
+                    type="number" 
+                    value={editForm.prev_fiscal_year_expense_total || 0} 
+                    onChange={(e) => setEditForm({ ...editForm, prev_fiscal_year_expense_total: parseFloat(e.target.value) || 0 })} 
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                ) : (
+                  <p className="text-2xl font-heading font-bold text-white">{formatCurrency(app.prev_fiscal_year_expense_total)}</p>
+                )}
+              </div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Ownership Tab */}
         <TabsContent value="ownership">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Ownership & Contacts</CardTitle>
-              <CardDescription>Application stakeholders and contact information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {[
-                  { label: 'Product Owner', field: 'product_owner_name', icon: User },
-                  { label: 'Data Steward', field: 'data_steward_name', icon: Database },
-                  { label: 'IT Contact', field: 'it_contact', icon: User },
-                  { label: 'Security Contact', field: 'security_contact', icon: User },
-                  { label: 'Vendor Contact', field: 'vendor_contact', icon: User },
-                  { label: 'General Contact', field: 'general_contact', icon: User },
-                ].map(({ label, field, icon: Icon }) => (
-                  <div key={field} className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg">
-                    <Icon className="w-5 h-5 text-slate-400 mt-0.5" />
-                    <div className="flex-1">
-                      <Label className="text-slate-500 text-xs">{label}</Label>
-                      {editing ? (
-                        <Input value={editForm[field] || ''} onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })} className="mt-1" placeholder={`Enter ${label.toLowerCase()}`} />
-                      ) : (
-                        <p className="text-zinc-900 text-sm mt-1">{app[field] || 'Not assigned'}</p>
-                      )}
-                    </div>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-heading font-semibold text-white mb-2">Ownership & Contacts</h3>
+            <p className="text-xs text-white/40 mb-6">Application stakeholders and contact information</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { label: 'Product Owner', field: 'product_owner_name', icon: User },
+                { label: 'Data Steward', field: 'data_steward_name', icon: Database },
+                { label: 'IT Contact', field: 'it_contact', icon: User },
+                { label: 'Security Contact', field: 'security_contact', icon: User },
+                { label: 'Vendor Contact', field: 'vendor_contact', icon: User },
+                { label: 'General Contact', field: 'general_contact', icon: User },
+              ].map(({ label, field, icon: Icon }) => (
+                <div key={field} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <Icon className="w-5 h-5 text-white/30 mt-0.5" />
+                  <div className="flex-1">
+                    <Label className="text-white/40 text-xs">{label}</Label>
+                    {editing ? (
+                      <Input 
+                        value={editForm[field] || ''} 
+                        onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })} 
+                        className="mt-1 bg-white/5 border-white/10 text-white" 
+                        placeholder={`Enter ${label.toLowerCase()}`} 
+                      />
+                    ) : (
+                      <p className="text-white/80 text-sm mt-1">{app[field] || 'Not assigned'}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+            </div>
+          </div>
         </TabsContent>
 
         {/* Requests Tab */}
         <TabsContent value="requests">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <div className="glass-card overflow-hidden">
+            <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Information Requests</CardTitle>
-                <CardDescription>Track requests for this application</CardDescription>
+                <h3 className="text-lg font-heading font-semibold text-white">Information Requests</h3>
+                <p className="text-xs text-white/40 mt-1">Track requests for this application</p>
               </div>
-              <Button size="sm" onClick={openRequestModal} data-testid="create-request-btn">
+              <Button 
+                size="sm" 
+                onClick={openRequestModal} 
+                data-testid="create-request-btn"
+                className="bg-white/10 hover:bg-white/20 text-white"
+              >
                 <Mail className="w-4 h-4 mr-2" />
                 New Request
               </Button>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-6">
               {requests.length === 0 ? (
-                <p className="text-slate-500 text-center py-8">No requests yet</p>
+                <p className="text-white/40 text-center py-8">No requests yet</p>
               ) : (
                 <div className="space-y-3">
                   {requests.map((req) => (
                     <div 
                       key={req.request_id} 
-                      className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer"
+                      className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-colors"
                       onClick={() => navigate(`/requests?id=${req.request_id}`)}
                       data-testid={`request-item-${req.request_id}`}
                     >
-                      <Mail className="w-5 h-5 text-slate-400 mt-0.5" />
+                      <Mail className="w-5 h-5 text-white/30 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-zinc-900">{req.request_type}</span>
+                          <span className="font-medium text-white">{req.request_type}</span>
                           <Badge className={`text-xs ${getRequestStatusColor(req.status)}`}>{req.status}</Badge>
-                          <Badge variant="outline" className="text-xs capitalize">{req.priority}</Badge>
+                          <Badge className="text-xs bg-white/10 text-white/50 capitalize">{req.priority}</Badge>
                         </div>
-                        <p className="text-sm text-slate-600 mt-1 truncate">{req.message}</p>
-                        <p className="text-xs text-slate-400 mt-1">To: {req.to_role} {req.to_name && `(${req.to_name})`}</p>
+                        <p className="text-sm text-white/50 mt-1 truncate">{req.message}</p>
+                        <p className="text-xs text-white/30 mt-1">To: {req.to_role} {req.to_name && `(${req.to_name})`}</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <ChevronRight className="w-4 h-4 text-white/30" />
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
       {/* Request Modal */}
       <Dialog open={requestModalOpen} onOpenChange={setRequestModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] bg-zinc-900 border-white/10">
           <DialogHeader>
-            <DialogTitle>Request Information</DialogTitle>
-            <DialogDescription>Send a request to the appropriate stakeholder for {app.title}</DialogDescription>
+            <DialogTitle className="text-white">Request Information</DialogTitle>
+            <DialogDescription className="text-white/50">
+              Send a request to the appropriate stakeholder for {app.title}
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Request Type</Label>
+                <Label className="text-white/70">Request Type</Label>
                 <Select value={requestForm.request_type} onValueChange={(v) => setRequestForm({ ...requestForm, request_type: v })}>
-                  <SelectTrigger className="mt-1" data-testid="request-type-select"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="request-type-select"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10">
                     <SelectItem value="Owner Info">Owner Info</SelectItem>
                     <SelectItem value="Data Sources">Data Sources</SelectItem>
                     <SelectItem value="Usage Validation">Usage Validation</SelectItem>
@@ -716,10 +726,10 @@ const ApplicationDetailPage = () => {
                 </Select>
               </div>
               <div>
-                <Label>Priority</Label>
+                <Label className="text-white/70">Priority</Label>
                 <Select value={requestForm.priority} onValueChange={(v) => setRequestForm({ ...requestForm, priority: v })}>
-                  <SelectTrigger className="mt-1" data-testid="request-priority-select"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="request-priority-select"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10">
                     <SelectItem value="Low">Low</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
                     <SelectItem value="High">High</SelectItem>
@@ -729,13 +739,13 @@ const ApplicationDetailPage = () => {
             </div>
 
             <div>
-              <Label>To Role</Label>
+              <Label className="text-white/70">To Role</Label>
               <Select value={requestForm.to_role} onValueChange={(v) => {
                 const contactMap = { 'Product Owner': app?.product_owner_name, 'Data Steward': app?.data_steward_name, 'IT Contact': app?.it_contact, 'Security Contact': app?.security_contact };
                 setRequestForm({ ...requestForm, to_role: v, to_name: contactMap[v] || '' });
               }}>
-                <SelectTrigger className="mt-1" data-testid="request-role-select"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="request-role-select"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-white/10">
                   <SelectItem value="Product Owner">Product Owner</SelectItem>
                   <SelectItem value="Data Steward">Data Steward</SelectItem>
                   <SelectItem value="IT Contact">IT Contact</SelectItem>
@@ -747,24 +757,54 @@ const ApplicationDetailPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Contact Name</Label>
-                <Input value={requestForm.to_name} onChange={(e) => setRequestForm({ ...requestForm, to_name: e.target.value })} placeholder="Name" className="mt-1" data-testid="request-contact-name" />
+                <Label className="text-white/70">Contact Name</Label>
+                <Input 
+                  value={requestForm.to_name} 
+                  onChange={(e) => setRequestForm({ ...requestForm, to_name: e.target.value })} 
+                  placeholder="Name" 
+                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  data-testid="request-contact-name" 
+                />
               </div>
               <div>
-                <Label>Email (optional)</Label>
-                <Input type="email" value={requestForm.to_email} onChange={(e) => setRequestForm({ ...requestForm, to_email: e.target.value })} placeholder="email@company.com" className="mt-1" data-testid="request-contact-email" />
+                <Label className="text-white/70">Email (optional)</Label>
+                <Input 
+                  type="email" 
+                  value={requestForm.to_email} 
+                  onChange={(e) => setRequestForm({ ...requestForm, to_email: e.target.value })} 
+                  placeholder="email@company.com" 
+                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  data-testid="request-contact-email" 
+                />
               </div>
             </div>
 
             <div>
-              <Label>Message *</Label>
-              <Textarea value={requestForm.message} onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })} placeholder="Describe what information you need..." className="mt-1" rows={4} data-testid="request-message" />
+              <Label className="text-white/70">Message *</Label>
+              <Textarea 
+                value={requestForm.message} 
+                onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })} 
+                placeholder="Describe what information you need..." 
+                className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                rows={4} 
+                data-testid="request-message" 
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRequestModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateRequest} className="bg-zinc-900 hover:bg-zinc-800" data-testid="submit-request-btn">
+            <Button 
+              variant="outline" 
+              onClick={() => setRequestModalOpen(false)}
+              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateRequest} 
+              data-testid="submit-request-btn"
+              className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+            >
               <Send className="w-4 h-4 mr-2" />
               Create Request
             </Button>

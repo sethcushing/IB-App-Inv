@@ -55,6 +55,14 @@ Build a clean, minimal, executive-friendly Systems Inventory application that im
 - [x] **Removed Emergent badge**
 - [x] Updated color scheme from lime to emerald green
 - [x] Modern glassmorphic styling with CSS variables for theming
+- [x] **Inline Grid Editing**: Edit application data directly in the inventory table
+- [x] **Column Selector**: Customize visible columns in the inventory grid with persistence to localStorage
+- [x] **5-Year Financials View**: Enhanced Financials tab with:
+  - Current financial summary cards
+  - YoY change indicator
+  - 5-Year total spend summary
+  - 5-Year spend trend chart
+  - Detailed 5-year financial history table with YoY change %, engaged users, and cost per user
 
 ## Technical Architecture
 

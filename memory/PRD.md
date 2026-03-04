@@ -90,9 +90,12 @@ Build a clean, minimal, executive-friendly Systems Inventory application that im
 - AI capability scanner uses GPT-4o-mini via Emergent LLM key
 
 ## Future Enhancements (Backlog)
+- [ ] **Bulk Edit Capability** (P1): Select multiple rows in inventory grid and edit a common field
+- [ ] **Export Functionality** (P2): Export inventory to PDF or Excel, respecting filters and visible columns
+- [ ] **Historical Data Integration** (P2): Connect YoY trend charts to actual historical data
+- [ ] **Portfolio-wide AI Analysis** (P3): Consolidated report on application redundancies and cost savings
 - [ ] Batch-update deployment_type for "Unknown" apps
 - [ ] Enhanced Executive Summary narrative generation
-- [ ] Export functionality (PDF reports, Excel export)
 - [ ] Email notifications for request workflow
 - [ ] Integration with SSO providers for actual usage data
 - [ ] Cost optimization recommendations based on overlap analysis

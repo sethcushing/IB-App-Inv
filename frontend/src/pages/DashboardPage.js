@@ -479,9 +479,9 @@ const DashboardPage = () => {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={spendByCostCenter} layout="vertical" margin={{ left: 20, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: chartColors.tick }} />
+                <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11, fill: chartColors.tick }} width={100} />
                 <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
                 <Bar 
                   dataKey="total_spend" 
@@ -498,7 +498,7 @@ const DashboardPage = () => {
 
       {/* High Spend / Low Engagement Section */}
       <div className="glass-card overflow-hidden">
-        <div className="p-6 border-b border-white/5">
+        <div className="p-6 border-b border-[var(--glass-border)]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h3 className="text-lg font-heading font-semibold text-theme-primary flex items-center gap-2">

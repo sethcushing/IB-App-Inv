@@ -1,60 +1,90 @@
-# Systems Inventory Dashboard - PRD
+# BIA | Blox App Inventory - Product Requirements Document
+
+## Overview
+BIA (Blox App Inventory) is an executive-friendly Systems Inventory Dashboard application that provides comprehensive visibility into an organization's application portfolio, including spend analysis, usage metrics, and capability overlap detection.
 
 ## Original Problem Statement
-Build a Systems Inventory Dashboard (Executive View) that imports Excel/CSV files and provides:
-- Executive dashboard with rollups (apps, spend, usage, categories, cost centers)
-- Drill-down inventory list to application details
-- Request Information workflow to contact Product Owner/Data Steward
-- Filtering by Cloud/On-Prem/Hybrid/Unknown deployment types
-- **Role-based views for different user types**
+Build a clean, minimal, executive-friendly Systems Inventory application that imports an Excel/CSV file and provides:
+1. A single-page executive dashboard with rollups (apps, spend, usage, categories, cost centers)
+2. A drill-down inventory list to each application's details
+3. A Request Information workflow to contact the Product Owner/Data Steward
+4. Filtering and segmentation by Cloud vs On-Prem vs Unknown
 
-## User Personas & Dashboard Views
-1. **Executive (admin)** 
-   - Full portfolio visibility: all 342 apps, $23M total spend
-   - Financial KPIs: Contract Spend, YTD Expense, Engaged Users
-   - Can edit all applications
-   - Can seed sample data & import files
+## Core Requirements
 
-2. **IT Manager (manager)** 
-   - Multi-cost center filtered view: ~98 apps in 4 IT cost centers
-   - Financial KPIs focused on their portfolio
-   - Can edit applications in their scope
-   - Dashboard shows "IT Management Dashboard"
+### Data & Import
+- Import screen for Excel or CSV files
+- Auto-detect and map columns to internal schema
+- Handle missing fields with default values
+- Normalize spend fields from currency strings to numeric values
+- Derive 'deployment_type' field (Cloud, On-Prem, Hybrid, Unknown)
+- Duplicate detection when adding new applications
+- Download template CSV functionality
 
-3. **Analyst (viewer)** 
-   - Single cost center view: ~54 apps
-   - Usage-focused KPIs: Engaged Users, Provisioned Users, Engagement Rate
-   - **Read-only access** (cannot edit applications)
-   - Dashboard shows "Usage Analytics Dashboard"
+### User Experience / Pages
+1. **Executive Dashboard**: KPI tiles, charts (Spend by Category, Apps by Category), global filters, Executive Summary
+2. **Inventory List**: Full, sortable, filterable table with Add Application functionality
+3. **Application Detail Page**: Profile view with tabs (Overview, YoY Trends, Usage, Financials, Ownership, Requests)
+4. **AI Capability Scanner**: Intelligent detection of overlapping application capabilities
+5. **Requests Center**: Inbox for information requests
+6. **Import/Admin**: File upload, field mapping, template download
 
-## What's Been Implemented (December 2024)
-- [x] Full authentication system with role-based permissions
-- [x] Cost center assignments stored in user profiles
-- [x] Role-specific dashboard views and KPIs
-- [x] Executive: Full portfolio with financial focus
-- [x] IT Manager: Multi-cost center filter with financial KPIs
-- [x] Analyst: Single cost center with usage metrics & read-only
-- [x] Role-specific executive summary narratives
-- [x] Edit permissions enforced on frontend (Read Only badge for viewers)
-- [x] Edit permissions enforced on backend (403 for viewers)
-- [x] All 342 applications from user's Excel imported
+## What's Been Implemented
 
-## Demo Accounts
-| Role | Email | Cost Centers |
-|------|-------|--------------|
-| Executive | exec@demo.com | All (no filter) |
-| IT Manager | it@demo.com | 650-it executive, 651-it applications-crm, 652-it operations, 653-it applications-erp |
-| Analyst | analyst@demo.com | 650-it executive |
+### Phase 1: Core MVP (Completed)
+- [x] Backend setup with FastAPI + MongoDB
+- [x] Data models for applications, requests
+- [x] Excel/CSV import with column auto-mapping
+- [x] Executive Dashboard with KPIs and Recharts visualizations
+- [x] Inventory list with sorting, filtering, pagination
+- [x] Application detail pages with all tabs
+- [x] Request creation and management workflow
+- [x] Sample data seeding
 
-Password for all: `demo123`
+### Phase 2: Enhanced Features (Completed)
+- [x] Clickable dashboard charts → Filter inventory
+- [x] Year-over-Year trend charts (simulated data)
+- [x] Add Application modal with form
+- [x] Duplicate detection (409 error on duplicate titles)
+- [x] Download Template CSV button
 
-## Tech Stack
-- **Backend**: FastAPI, MongoDB, PyJWT, bcrypt, pandas, openpyxl
-- **Frontend**: React, Tailwind CSS, Recharts, Shadcn/UI, React Router
-- **Auth**: JWT tokens with role and cost center assignments
+### Phase 3: AI & UX Improvements (Completed - Dec 2025)
+- [x] **AI Capability Scanner**: GPT-4o-mini powered analysis to find applications with overlapping capabilities
+- [x] **Light/Dark Mode Toggle**: Full theme support with glassmorphic design
+- [x] **Rebranding**: Changed from generic to "BIA | Blox App Inventory"
+- [x] **Removed Emergent badge**
+- [x] Updated color scheme from lime to emerald green
+- [x] Modern glassmorphic styling with CSS variables for theming
 
-## Next Action Items
-1. Add user profile settings page to update cost center assignments
-2. Bulk deployment type update for Unknown apps
-3. Export filtered data to CSV/Excel
-4. Consider line-of-business grouping for IT Manager view
+## Technical Architecture
+
+### Backend (FastAPI)
+- `/app/backend/server.py`: All routes, models, business logic
+- MongoDB collections: `applications`, `requests`
+- AI integration via `emergentintegrations` library with OpenAI GPT-4o-mini
+
+### Frontend (React)
+- `/app/frontend/src/pages/`: DashboardPage, InventoryPage, ApplicationDetailPage, RequestsPage, ImportPage
+- `/app/frontend/src/components/Layout.js`: Main layout with sidebar and theme toggle
+- `/app/frontend/src/context/ThemeContext.js`: Light/dark mode state management
+- Shadcn/UI components for consistent styling
+
+### Key API Endpoints
+- `GET /api/applications`: List with filtering, sorting, pagination
+- `POST /api/applications`: Create new (with duplicate detection)
+- `GET /api/dashboard/*`: KPIs, charts data, executive summary
+- `POST /api/ai/scan-capabilities`: AI-powered capability overlap detection
+- `POST /api/import/upload`: Excel/CSV import
+- `GET /api/import/template`: Download CSV template
+
+## Known Limitations
+- YoY trend data is simulated (no historical data source)
+- AI capability scanner uses GPT-4o-mini via Emergent LLM key
+
+## Future Enhancements (Backlog)
+- [ ] Batch-update deployment_type for "Unknown" apps
+- [ ] Enhanced Executive Summary narrative generation
+- [ ] Export functionality (PDF reports, Excel export)
+- [ ] Email notifications for request workflow
+- [ ] Integration with SSO providers for actual usage data
+- [ ] Cost optimization recommendations based on overlap analysis

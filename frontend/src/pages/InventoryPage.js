@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
 import {
-  Search, Filter, ChevronUp, ChevronDown, ChevronRight, RefreshCw, Plus
+  Search, Filter, ChevronUp, ChevronDown, ChevronRight, RefreshCw, Plus, X
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -58,7 +57,7 @@ const emptyAppForm = {
 
 const InventoryPage = () => {
   const navigate = useNavigate();
-  const { canEdit } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
   const [total, setTotal] = useState(0);
@@ -67,19 +66,23 @@ const InventoryPage = () => {
   const [newAppForm, setNewAppForm] = useState(emptyAppForm);
   const [submitting, setSubmitting] = useState(false);
   
+  // Initialize filters from URL params
   const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    functional_category: '',
-    deployment_type: '',
-    cost_center: '',
-    vendor: ''
+    search: searchParams.get('search') || '',
+    status: searchParams.get('status') || '',
+    functional_category: searchParams.get('category') || '',
+    deployment_type: searchParams.get('deployment_type') || '',
+    cost_center: searchParams.get('cost_center') || '',
+    vendor: searchParams.get('vendor') || ''
   });
   
   const [sortBy, setSortBy] = useState('title');
   const [sortOrder, setSortOrder] = useState('asc');
   const [page, setPage] = useState(0);
   const limit = 25;
+
+  // Active filter from URL
+  const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('deployment_type');
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -115,6 +118,19 @@ const InventoryPage = () => {
     fetchApplications();
   }, [fetchApplications]);
 
+  // Update filters when URL params change
+  useEffect(() => {
+    const newFilters = {
+      search: searchParams.get('search') || '',
+      status: searchParams.get('status') || '',
+      functional_category: searchParams.get('category') || '',
+      deployment_type: searchParams.get('deployment_type') || '',
+      cost_center: searchParams.get('cost_center') || '',
+      vendor: searchParams.get('vendor') || ''
+    };
+    setFilters(newFilters);
+  }, [searchParams]);
+
   const handleSort = (field) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -133,6 +149,7 @@ const InventoryPage = () => {
       cost_center: '',
       vendor: ''
     });
+    setSearchParams({});
     setPage(0);
   };
 
@@ -156,7 +173,6 @@ const InventoryPage = () => {
       toast.success('Application created successfully');
       setAddModalOpen(false);
       setNewAppForm(emptyAppForm);
-      // Navigate to the new application's detail page
       navigate(`/applications/${res.data.app_id}`);
     } catch (error) {
       console.error('Create error:', error);
@@ -207,7 +223,7 @@ const InventoryPage = () => {
             Application Inventory
           </h1>
           <p className="text-slate-500 mt-1">
-            {total} applications in portfolio
+            {total} applications {activeUrlFilter ? 'matching filter' : 'in portfolio'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -215,14 +231,30 @@ const InventoryPage = () => {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          {canEdit() && (
-            <Button size="sm" onClick={openAddModal} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="add-application-btn">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Application
-            </Button>
-          )}
+          <Button size="sm" onClick={openAddModal} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="add-application-btn">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Application
+          </Button>
         </div>
       </div>
+
+      {/* Active Filter Banner */}
+      {activeUrlFilter && (
+        <Card className="border-lime-200 bg-lime-50">
+          <CardContent className="p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-lime-600" />
+              <span className="text-sm text-lime-800">
+                Filtered by: <strong>{activeUrlFilter}</strong>
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-lime-700 hover:text-lime-900">
+              <X className="w-4 h-4 mr-1" />
+              Clear Filter
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card className="border-slate-200">
@@ -306,59 +338,33 @@ const InventoryPage = () => {
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <p className="text-slate-500">No applications found</p>
               <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or import data</p>
-              {canEdit() && (
-                <Button size="sm" onClick={openAddModal} className="mt-4 bg-lime-500 hover:bg-lime-600 text-zinc-900">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Application
-                </Button>
-              )}
+              <Button size="sm" onClick={openAddModal} className="mt-4 bg-lime-500 hover:bg-lime-600 text-zinc-900">
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Application
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full" data-testid="inventory-table">
                 <thead>
                   <tr className="table-header border-b border-slate-200">
-                    <th 
-                      className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('title')}
-                    >
+                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('title')}>
                       Title <SortIcon field="title" />
                     </th>
-                    <th 
-                      className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('status')}
-                    >
+                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('status')}>
                       Status <SortIcon field="status" />
                     </th>
-                    <th 
-                      className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('functional_category')}
-                    >
+                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('functional_category')}>
                       Category <SortIcon field="functional_category" />
                     </th>
-                    <th 
-                      className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('vendor')}
-                    >
+                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('vendor')}>
                       Vendor <SortIcon field="vendor" />
                     </th>
                     <th className="text-center p-4">Deployment</th>
-                    <th 
-                      className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('contract_annual_spend')}
-                    >
+                    <th className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('contract_annual_spend')}>
                       Annual Spend <SortIcon field="contract_annual_spend" />
                     </th>
-                    <th 
-                      className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('fiscal_ytd_expense_total')}
-                    >
-                      YTD Expense <SortIcon field="fiscal_ytd_expense_total" />
-                    </th>
-                    <th 
-                      className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => handleSort('engaged_users')}
-                    >
+                    <th className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('engaged_users')}>
                       Engaged <SortIcon field="engaged_users" />
                     </th>
                     <th className="text-left p-4">Owner</th>
@@ -395,9 +401,6 @@ const InventoryPage = () => {
                       <td className="p-4 text-right font-mono text-sm">
                         {formatCurrency(app.contract_annual_spend)}
                       </td>
-                      <td className="p-4 text-right font-mono text-sm text-slate-600">
-                        {formatCurrency(app.fiscal_ytd_expense_total)}
-                      </td>
                       <td className="p-4 text-right font-mono text-sm">
                         {app.engaged_users || 0}
                       </td>
@@ -423,22 +426,10 @@ const InventoryPage = () => {
             Showing {page * limit + 1} - {Math.min((page + 1) * limit, total)} of {total}
           </p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              data-testid="prev-page"
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} data-testid="prev-page">
               Previous
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-              data-testid="next-page"
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} data-testid="next-page">
               Next
             </Button>
           </div>
@@ -456,39 +447,19 @@ const InventoryPage = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Label htmlFor="app-title">Application Title *</Label>
-                <Input
-                  id="app-title"
-                  value={newAppForm.title}
-                  onChange={(e) => setNewAppForm({ ...newAppForm, title: e.target.value })}
-                  placeholder="e.g., Salesforce CRM"
-                  className="mt-1"
-                  data-testid="new-app-title"
-                />
+                <Input id="app-title" value={newAppForm.title} onChange={(e) => setNewAppForm({ ...newAppForm, title: e.target.value })} placeholder="e.g., Salesforce CRM" className="mt-1" data-testid="new-app-title" />
               </div>
               <div>
                 <Label htmlFor="app-vendor">Vendor</Label>
-                <Input
-                  id="app-vendor"
-                  value={newAppForm.vendor}
-                  onChange={(e) => setNewAppForm({ ...newAppForm, vendor: e.target.value })}
-                  placeholder="e.g., Salesforce"
-                  className="mt-1"
-                  data-testid="new-app-vendor"
-                />
+                <Input id="app-vendor" value={newAppForm.vendor} onChange={(e) => setNewAppForm({ ...newAppForm, vendor: e.target.value })} placeholder="e.g., Salesforce" className="mt-1" data-testid="new-app-vendor" />
               </div>
               <div>
                 <Label htmlFor="app-status">Status</Label>
-                <Select 
-                  value={newAppForm.status} 
-                  onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}
-                >
-                  <SelectTrigger className="mt-1" data-testid="new-app-status">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={newAppForm.status} onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}>
+                  <SelectTrigger className="mt-1" data-testid="new-app-status"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="under_review">Under Review</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
@@ -502,24 +473,12 @@ const InventoryPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="app-category">Functional Category</Label>
-                <Input
-                  id="app-category"
-                  value={newAppForm.functional_category}
-                  onChange={(e) => setNewAppForm({ ...newAppForm, functional_category: e.target.value })}
-                  placeholder="e.g., Sales Engagement"
-                  className="mt-1"
-                  data-testid="new-app-category"
-                />
+                <Input id="app-category" value={newAppForm.functional_category} onChange={(e) => setNewAppForm({ ...newAppForm, functional_category: e.target.value })} placeholder="e.g., Sales Engagement" className="mt-1" data-testid="new-app-category" />
               </div>
               <div>
                 <Label htmlFor="app-deployment">Deployment Type</Label>
-                <Select 
-                  value={newAppForm.deployment_type} 
-                  onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}
-                >
-                  <SelectTrigger className="mt-1" data-testid="new-app-deployment">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={newAppForm.deployment_type} onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}>
+                  <SelectTrigger className="mt-1" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Cloud">Cloud</SelectItem>
                     <SelectItem value="On-Prem">On-Prem</SelectItem>
@@ -532,155 +491,49 @@ const InventoryPage = () => {
 
             <div>
               <Label htmlFor="app-description">Description</Label>
-              <Textarea
-                id="app-description"
-                value={newAppForm.short_description}
-                onChange={(e) => setNewAppForm({ ...newAppForm, short_description: e.target.value })}
-                placeholder="Brief description of the application..."
-                className="mt-1"
-                rows={2}
-                data-testid="new-app-description"
-              />
+              <Textarea id="app-description" value={newAppForm.short_description} onChange={(e) => setNewAppForm({ ...newAppForm, short_description: e.target.value })} placeholder="Brief description..." className="mt-1" rows={2} data-testid="new-app-description" />
             </div>
 
-            {/* Financial Info */}
             <div className="border-t border-slate-200 pt-4">
               <h4 className="text-sm font-medium text-slate-700 mb-3">Financial Information</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="app-spend">Contract Annual Spend ($)</Label>
-                  <Input
-                    id="app-spend"
-                    type="number"
-                    value={newAppForm.contract_annual_spend}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, contract_annual_spend: e.target.value })}
-                    placeholder="0"
-                    className="mt-1"
-                    data-testid="new-app-spend"
-                  />
+                  <Input id="app-spend" type="number" value={newAppForm.contract_annual_spend} onChange={(e) => setNewAppForm({ ...newAppForm, contract_annual_spend: e.target.value })} placeholder="0" className="mt-1" data-testid="new-app-spend" />
                 </div>
                 <div>
                   <Label htmlFor="app-ytd">Fiscal YTD Expense ($)</Label>
-                  <Input
-                    id="app-ytd"
-                    type="number"
-                    value={newAppForm.fiscal_ytd_expense_total}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, fiscal_ytd_expense_total: e.target.value })}
-                    placeholder="0"
-                    className="mt-1"
-                    data-testid="new-app-ytd"
-                  />
+                  <Input id="app-ytd" type="number" value={newAppForm.fiscal_ytd_expense_total} onChange={(e) => setNewAppForm({ ...newAppForm, fiscal_ytd_expense_total: e.target.value })} placeholder="0" className="mt-1" data-testid="new-app-ytd" />
                 </div>
               </div>
             </div>
 
-            {/* Usage Info */}
             <div className="border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Usage Information</h4>
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Usage & Ownership</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="app-engaged">Engaged Users</Label>
-                  <Input
-                    id="app-engaged"
-                    type="number"
-                    value={newAppForm.engaged_users}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, engaged_users: e.target.value })}
-                    placeholder="0"
-                    className="mt-1"
-                    data-testid="new-app-engaged"
-                  />
+                  <Input id="app-engaged" type="number" value={newAppForm.engaged_users} onChange={(e) => setNewAppForm({ ...newAppForm, engaged_users: e.target.value })} placeholder="0" className="mt-1" data-testid="new-app-engaged" />
                 </div>
-                <div>
-                  <Label htmlFor="app-provisioned">Provisioned Users</Label>
-                  <Input
-                    id="app-provisioned"
-                    type="number"
-                    value={newAppForm.provisioned_users}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, provisioned_users: e.target.value })}
-                    placeholder="0"
-                    className="mt-1"
-                    data-testid="new-app-provisioned"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Ownership Info */}
-            <div className="border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Ownership & Contacts</h4>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="app-cost-center">Cost Center</Label>
-                  <Input
-                    id="app-cost-center"
-                    value={newAppForm.cost_center_primary}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, cost_center_primary: e.target.value })}
-                    placeholder="e.g., 650-it executive"
-                    className="mt-1"
-                    data-testid="new-app-cost-center"
-                  />
+                  <Input id="app-cost-center" value={newAppForm.cost_center_primary} onChange={(e) => setNewAppForm({ ...newAppForm, cost_center_primary: e.target.value })} placeholder="e.g., 650-it executive" className="mt-1" data-testid="new-app-cost-center" />
                 </div>
                 <div>
                   <Label htmlFor="app-owner">Product Owner</Label>
-                  <Input
-                    id="app-owner"
-                    value={newAppForm.product_owner_name}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, product_owner_name: e.target.value })}
-                    placeholder="Owner name"
-                    className="mt-1"
-                    data-testid="new-app-owner"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="app-steward">Data Steward</Label>
-                  <Input
-                    id="app-steward"
-                    value={newAppForm.data_steward_name}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, data_steward_name: e.target.value })}
-                    placeholder="Steward name"
-                    className="mt-1"
-                    data-testid="new-app-steward"
-                  />
+                  <Input id="app-owner" value={newAppForm.product_owner_name} onChange={(e) => setNewAppForm({ ...newAppForm, product_owner_name: e.target.value })} placeholder="Owner name" className="mt-1" data-testid="new-app-owner" />
                 </div>
                 <div>
                   <Label htmlFor="app-it-contact">IT Contact</Label>
-                  <Input
-                    id="app-it-contact"
-                    value={newAppForm.it_contact}
-                    onChange={(e) => setNewAppForm({ ...newAppForm, it_contact: e.target.value })}
-                    placeholder="IT contact name"
-                    className="mt-1"
-                    data-testid="new-app-it-contact"
-                  />
+                  <Input id="app-it-contact" value={newAppForm.it_contact} onChange={(e) => setNewAppForm({ ...newAppForm, it_contact: e.target.value })} placeholder="IT contact name" className="mt-1" data-testid="new-app-it-contact" />
                 </div>
               </div>
-            </div>
-
-            {/* Notes */}
-            <div className="border-t border-slate-200 pt-4">
-              <Label htmlFor="app-notes">Notes</Label>
-              <Textarea
-                id="app-notes"
-                value={newAppForm.notes}
-                onChange={(e) => setNewAppForm({ ...newAppForm, notes: e.target.value })}
-                placeholder="Additional notes..."
-                className="mt-1"
-                rows={2}
-                data-testid="new-app-notes"
-              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddModalOpen(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddApplication} 
-              disabled={submitting || !newAppForm.title.trim()}
-              className="bg-lime-500 hover:bg-lime-600 text-zinc-900"
-              data-testid="submit-new-app"
-            >
+            <Button variant="outline" onClick={() => setAddModalOpen(false)} disabled={submitting}>Cancel</Button>
+            <Button onClick={handleAddApplication} disabled={submitting || !newAppForm.title.trim()} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="submit-new-app">
               {submitting ? 'Creating...' : 'Create Application'}
             </Button>
           </DialogFooter>

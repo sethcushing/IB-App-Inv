@@ -36,7 +36,7 @@ const formatNumber = (value) => {
   return value.toString();
 };
 
-const CHART_COLORS = ['#a3e635', '#60a5fa', '#f472b6', '#fbbf24', '#818cf8'];
+const CHART_COLORS = ['#22c55e', '#60a5fa', '#fbbf24', '#818cf8', '#14b8a6'];
 
 const CustomTooltip = ({ active, payload, label, formatter }) => {
   if (active && payload && payload.length) {

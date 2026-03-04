@@ -392,13 +392,13 @@ const DashboardPage = () => {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={spendByCategory} layout="vertical" margin={{ left: 20, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                <YAxis dataKey="category" type="category" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: chartColors.tick }} />
+                <YAxis dataKey="category" type="category" tick={{ fontSize: 11, fill: chartColors.tick }} width={100} />
                 <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
                 <Bar 
                   dataKey="total_spend" 
-                  fill="#a3e635" 
+                  fill="#22c55e" 
                   radius={[0, 6, 6, 0]} 
                   cursor="pointer"
                   onClick={(data) => handleBarClick(data, 'category')}
@@ -426,7 +426,7 @@ const DashboardPage = () => {
                   paddingAngle={3}
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={{ stroke: 'var(--text-faint)' }}
+                  labelLine={{ stroke: chartColors.labelLine }}
                   cursor="pointer"
                   onClick={(data) => handleDeploymentClick(data.name)}
                 >
@@ -449,14 +449,14 @@ const DashboardPage = () => {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={appsByCategory} margin={{ left: 20, right: 20, bottom: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
                 <XAxis 
                   dataKey="category" 
-                  tick={{ fontSize: 10, angle: -45, textAnchor: 'end', fill: 'var(--text-muted)' }} 
+                  tick={{ fontSize: 10, angle: -45, textAnchor: 'end', fill: chartColors.tick }} 
                   interval={0}
                   height={80}
                 />
-                <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+                <YAxis tick={{ fontSize: 11, fill: chartColors.tick }} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar 
                   dataKey="count" 

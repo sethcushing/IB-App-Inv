@@ -540,6 +540,162 @@ async def get_filter_options():
         "deployment_types": ["Cloud", "On-Prem", "Hybrid", "Unknown"]
     }
 
+# ============ AI CAPABILITY SCANNER ============
+
+class CapabilityScanRequest(BaseModel):
+    app_id: str
+    
+class OverlappingApp(BaseModel):
+    app_id: str
+    title: str
+    vendor: Optional[str]
+    capabilities: Optional[str]
+    similarity_reason: str
+    overlap_score: int  # 1-100
+
+@api_router.post("/ai/scan-capabilities")
+async def scan_overlapping_capabilities(request: CapabilityScanRequest):
+    """Use AI to find applications with overlapping capabilities"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    
+    # Get the target application
+    target_app = await db.applications.find_one({"app_id": request.app_id}, {"_id": 0})
+    if not target_app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    target_capabilities = target_app.get("capabilities") or target_app.get("short_description") or ""
+    target_category = target_app.get("functional_category") or ""
+    target_title = target_app.get("title", "")
+    
+    if not target_capabilities and not target_category:
+        return {
+            "target_app": target_title,
+            "overlapping_apps": [],
+            "analysis_summary": "No capabilities or category defined for this application. Please add capability information to enable overlap detection."
+        }
+    
+    # Get all other applications with capabilities
+    other_apps = await db.applications.find(
+        {"app_id": {"$ne": request.app_id}},
+        {"_id": 0, "app_id": 1, "title": 1, "vendor": 1, "capabilities": 1, 
+         "short_description": 1, "functional_category": 1}
+    ).to_list(length=500)
+    
+    if not other_apps:
+        return {
+            "target_app": target_title,
+            "overlapping_apps": [],
+            "analysis_summary": "No other applications in the inventory to compare."
+        }
+    
+    # Build comparison data
+    apps_summary = []
+    for app in other_apps:
+        cap = app.get("capabilities") or app.get("short_description") or ""
+        cat = app.get("functional_category") or ""
+        if cap or cat:
+            apps_summary.append({
+                "id": app["app_id"],
+                "title": app["title"],
+                "vendor": app.get("vendor"),
+                "capabilities": cap[:200] if cap else "",
+                "category": cat
+            })
+    
+    if not apps_summary:
+        return {
+            "target_app": target_title,
+            "overlapping_apps": [],
+            "analysis_summary": "No other applications have capability information to compare."
+        }
+    
+    # Build AI prompt
+    apps_text = "\n".join([
+        f"- ID: {a['id']}, Title: {a['title']}, Category: {a['category']}, Capabilities: {a['capabilities'][:150]}"
+        for a in apps_summary[:50]  # Limit to 50 apps for context
+    ])
+    
+    prompt = f"""Analyze the following target application and identify other applications with overlapping or similar capabilities.
+
+TARGET APPLICATION:
+- Title: {target_title}
+- Category: {target_category}
+- Capabilities: {target_capabilities[:300]}
+
+OTHER APPLICATIONS IN INVENTORY:
+{apps_text}
+
+Your task:
+1. Identify applications that have overlapping, similar, or redundant capabilities with the target application
+2. For each overlapping app, provide:
+   - The app ID
+   - A brief reason for the overlap (1 sentence)
+   - An overlap score from 1-100 (100 = identical capabilities, 50 = moderate overlap, 10 = slight similarity)
+
+Respond in this exact JSON format:
+{{
+  "overlapping_apps": [
+    {{"app_id": "...", "similarity_reason": "...", "overlap_score": 85}},
+    ...
+  ],
+  "summary": "Brief analysis summary (1-2 sentences)"
+}}
+
+Only include apps with overlap_score >= 30. Return empty array if no significant overlaps found."""
+
+    try:
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"capability-scan-{request.app_id}",
+            system_message="You are an IT portfolio analyst expert at identifying redundant and overlapping software applications. Respond only with valid JSON."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        # Parse AI response
+        import json
+        try:
+            # Extract JSON from response
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                result = json.loads(json_match.group())
+            else:
+                result = {"overlapping_apps": [], "summary": "Unable to parse AI response"}
+        except json.JSONDecodeError:
+            result = {"overlapping_apps": [], "summary": "AI response parsing error"}
+        
+        # Enrich results with full app data
+        enriched_overlaps = []
+        for overlap in result.get("overlapping_apps", []):
+            app_data = next((a for a in apps_summary if a["id"] == overlap.get("app_id")), None)
+            if app_data:
+                enriched_overlaps.append({
+                    "app_id": app_data["id"],
+                    "title": app_data["title"],
+                    "vendor": app_data.get("vendor"),
+                    "capabilities": app_data.get("capabilities", ""),
+                    "similarity_reason": overlap.get("similarity_reason", ""),
+                    "overlap_score": overlap.get("overlap_score", 0)
+                })
+        
+        # Sort by overlap score
+        enriched_overlaps.sort(key=lambda x: x["overlap_score"], reverse=True)
+        
+        return {
+            "target_app": target_title,
+            "target_capabilities": target_capabilities[:200],
+            "overlapping_apps": enriched_overlaps[:10],  # Top 10
+            "analysis_summary": result.get("summary", "Analysis complete.")
+        }
+        
+    except Exception as e:
+        logger.error(f"AI capability scan error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
 # ============ IMPORT ROUTES ============
 
 @api_router.post("/import/upload")

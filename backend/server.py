@@ -471,6 +471,58 @@ async def get_executive_summary():
         }
     }
 
+@api_router.get("/dashboard/yoy/{app_id}")
+async def get_yoy_trends(app_id: str):
+    """Get Year-over-Year trend data for a specific application"""
+    app = await db.applications.find_one({"app_id": app_id}, {"_id": 0})
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    # Generate simulated YoY data based on current values
+    # In production, this would come from historical data storage
+    current_spend = app.get("contract_annual_spend", 0) or 0
+    prev_spend = app.get("prev_fiscal_year_expense_total", current_spend * 0.9) or current_spend * 0.9
+    current_users = app.get("engaged_users", 0) or 0
+    
+    base_spend = max(prev_spend * 0.7, 1000)
+    base_users = max(int(current_users * 0.5), 5)
+    
+    import random
+    years = ['2020', '2021', '2022', '2023', '2024']
+    trends = []
+    
+    for idx, year in enumerate(years):
+        growth_factor = 1 + (idx * 0.15) + (random.random() * 0.1 - 0.05)
+        user_growth = 1 + (idx * 0.2) + (random.random() * 0.15 - 0.075)
+        
+        trends.append({
+            "year": year,
+            "spend": round(base_spend * growth_factor),
+            "users": round(base_users * user_growth),
+            "ytd_expense": round(base_spend * growth_factor * 0.75),
+        })
+    
+    # Calculate YoY changes
+    if len(trends) >= 2:
+        current = trends[-1]
+        previous = trends[-2]
+        spend_change = ((current["spend"] - previous["spend"]) / previous["spend"] * 100) if previous["spend"] > 0 else 0
+        users_change = ((current["users"] - previous["users"]) / previous["users"] * 100) if previous["users"] > 0 else 0
+    else:
+        spend_change = 0
+        users_change = 0
+    
+    return {
+        "app_id": app_id,
+        "title": app.get("title"),
+        "trends": trends,
+        "yoy_changes": {
+            "spend_change_percent": round(spend_change, 1),
+            "users_change_percent": round(users_change, 1)
+        },
+        "note": "Trend data is simulated for demonstration. Connect to historical data source for actual values."
+    }
+
 # ============ FILTER OPTIONS ============
 
 @api_router.get("/filters/options")

@@ -463,19 +463,19 @@ const DashboardPage = () => {
         {/* Spend by Cost Center - Clickable */}
         <div className="glass-card p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-heading font-semibold text-white">Spend by Cost Center</h3>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Spend by Cost Center</h3>
             <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={spendByCostCenter} layout="vertical" margin={{ left: 20, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
-                <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+                <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} width={100} />
                 <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
                 <Bar 
                   dataKey="total_spend" 
-                  fill="#f472b6" 
+                  fill="#14b8a6" 
                   radius={[0, 6, 6, 0]} 
                   cursor="pointer"
                   onClick={(data) => handleBarClick(data, 'costCenter')}

@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 class RoleBasedDashboardTester:
-    def __init__(self, base_url="https://spend-tracker-325.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://systems-tracker-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.tokens = {}
         self.tests_run = 0

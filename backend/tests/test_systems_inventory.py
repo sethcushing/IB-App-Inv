@@ -6,7 +6,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://spend-tracker-325.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://systems-tracker-1.preview.emergentagent.com').rstrip('/')
 
 
 class TestDashboardEndpoints:

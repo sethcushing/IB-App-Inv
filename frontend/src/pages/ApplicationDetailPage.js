@@ -600,9 +600,9 @@ const ApplicationDetailPage = () => {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                  <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: chartColors.tick }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12, fill: chartColors.tick }} />
                   <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
                   <Line 
                     type="monotone" 
@@ -627,9 +627,9 @@ const ApplicationDetailPage = () => {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                  <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: chartColors.tick }} />
+                  <YAxis tick={{ fontSize: 12, fill: chartColors.tick }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Line 
                     type="monotone" 

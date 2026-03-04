@@ -8,7 +8,7 @@ import {
   Menu, 
   X,
   ChevronRight,
-  Building2
+  Sparkles
 } from 'lucide-react';
 
 const navItems = [
@@ -33,37 +33,46 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen relative">
+      {/* Background gradient orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-lime-500/10 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 -right-40 w-80 h-80 bg-blue-500/5 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-40 left-1/3 w-72 h-72 bg-purple-500/5 rounded-full blur-[100px]" />
+      </div>
+
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 
-        transform transition-transform duration-200 ease-out
+        fixed top-0 left-0 z-50 h-full w-64 sidebar-glass
+        transform transition-transform duration-300 ease-out
         lg:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-200">
-            <div className="w-9 h-9 bg-zinc-900 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-lime-500" />
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5">
+            <div className="w-10 h-10 bg-gradient-to-br from-lime-400 to-lime-600 rounded-xl flex items-center justify-center shadow-lg shadow-lime-500/20">
+              <Sparkles className="w-5 h-5 text-zinc-900" />
             </div>
             <div>
-              <h1 className="font-heading font-bold text-zinc-900 text-lg leading-tight">Systems</h1>
-              <p className="text-xs text-slate-500 -mt-0.5">Inventory Dashboard</p>
+              <h1 className="font-heading font-bold text-white text-lg leading-tight tracking-tight">
+                Systems
+              </h1>
+              <p className="text-xs text-white/40 -mt-0.5">Inventory Dashboard</p>
             </div>
             <button 
-              className="lg:hidden ml-auto p-1 hover:bg-slate-100 rounded"
+              className="lg:hidden ml-auto p-2 hover:bg-white/5 rounded-lg transition-colors"
               onClick={() => setSidebarOpen(false)}
             >
-              <X className="w-5 h-5 text-slate-500" />
+              <X className="w-5 h-5 text-white/50" />
             </button>
           </div>
 
@@ -80,46 +89,61 @@ const Layout = ({ children }) => {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                    transition-all duration-150
+                    flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                    transition-all duration-200 group relative
                     ${isActive 
-                      ? 'bg-lime-500/10 text-zinc-900 border-l-4 border-lime-500 -ml-px pl-[11px]' 
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-zinc-900'
+                      ? 'bg-lime-500/15 text-lime-400' 
+                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
                     }
                   `}
                   data-testid={`nav-${item.label.toLowerCase()}`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-lime-600' : ''}`} />
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-lime-400 rounded-r-full" />
+                  )}
+                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-lime-400' : 'group-hover:text-lime-400/70'}`} />
                   {item.label}
+                  {isActive && (
+                    <ChevronRight className="w-4 h-4 ml-auto text-lime-400/50" />
+                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-200">
-            <p className="text-xs text-slate-400 text-center">Systems Inventory v1.0</p>
+          <div className="p-4 border-t border-white/5">
+            <div className="px-4 py-3 rounded-xl bg-white/5">
+              <p className="text-xs text-white/30 text-center">Systems Inventory v1.0</p>
+              <p className="text-[10px] text-white/20 text-center mt-1">Glassmorphic Edition</p>
+            </div>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 relative z-10">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/50">
+        <header className="sticky top-0 z-30 header-blur">
           <div className="flex items-center gap-4 px-4 sm:px-6 lg:px-8 h-16">
             <button 
-              className="lg:hidden p-2 -ml-2 hover:bg-slate-100 rounded-lg"
+              className="lg:hidden p-2 -ml-2 hover:bg-white/5 rounded-lg transition-colors"
               onClick={() => setSidebarOpen(true)}
               data-testid="mobile-menu-btn"
             >
-              <Menu className="w-5 h-5 text-slate-600" />
+              <Menu className="w-5 h-5 text-white/60" />
             </button>
             
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span className="hidden sm:inline">Home</span>
-              <ChevronRight className="w-4 h-4 hidden sm:block" />
-              <span className="font-medium text-zinc-900">{getBreadcrumb()}</span>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="hidden sm:inline text-white/40">Home</span>
+              <ChevronRight className="w-4 h-4 hidden sm:block text-white/20" />
+              <span className="font-medium text-white/90">{getBreadcrumb()}</span>
+            </div>
+
+            {/* Decorative element */}
+            <div className="ml-auto flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+              <span className="text-xs text-white/40 hidden sm:inline">Live</span>
             </div>
           </div>
         </header>

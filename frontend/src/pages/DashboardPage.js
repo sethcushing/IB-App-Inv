@@ -536,7 +536,7 @@ const DashboardPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="table-header">
+                <tr className="table-header border-b-2 border-[var(--glass-border)]">
                   <th className="text-left p-4">Application</th>
                   <th className="text-left p-4">Vendor</th>
                   <th className="text-left p-4">Category</th>
@@ -546,16 +546,16 @@ const DashboardPage = () => {
                   <th className="text-center p-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody>
                 {highSpendLowEngagement.map((app) => (
                   <tr 
                     key={app.app_id} 
-                    className="hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors"
+                    className="table-row-bordered hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors"
                     onClick={() => navigate(`/applications/${app.app_id}`)}
                     data-testid={`hsle-row-${app.app_id}`}
                   >
                     <td className="p-4">
-                      <p className="font-medium text-white">{app.title}</p>
+                      <p className="font-medium text-theme-primary">{app.title}</p>
                     </td>
                     <td className="p-4 text-theme-secondary">{app.vendor || '-'}</td>
                     <td className="p-4 text-theme-secondary">{app.functional_category || '-'}</td>

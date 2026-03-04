@@ -1,5 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Query
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -10,8 +9,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
-import jwt
-import bcrypt
 import pandas as pd
 import io
 import re
@@ -24,13 +21,6 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# JWT Config
-JWT_SECRET = os.environ.get('JWT_SECRET', 'systems-inventory-secret-key-2024')
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
-
-security = HTTPBearer()
-
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
@@ -39,42 +29,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # ============ MODELS ============
-
-class UserCreate(BaseModel):
-    email: str
-    password: str
-    name: str
-    role: str = "viewer"  # admin, manager, viewer
-    assigned_cost_centers: Optional[List[str]] = []  # For managers: multiple, for viewers: single
-
-class UserLogin(BaseModel):
-    email: str
-    password: str
-
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    assigned_cost_centers: Optional[List[str]] = None
-
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-    role: str
-    assigned_cost_centers: List[str] = []
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: UserResponse
-
-class UserProfileResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-    role: str
-    assigned_cost_centers: List[str] = []
-    can_edit: bool = True
-    dashboard_view: str = "executive"  # executive, manager, analyst
 
 class ApplicationCreate(BaseModel):
     title: str
@@ -136,12 +90,12 @@ class ApplicationUpdate(BaseModel):
 
 class RequestCreate(BaseModel):
     app_id: str
-    request_type: str  # Owner Info, Data Sources, Usage Validation, Cost Validation, Security Review, Other
-    to_role: str  # Product Owner, Data Steward, IT Contact, Security Contact, Other
+    request_type: str
+    to_role: str
     to_name: Optional[str] = None
     to_email: Optional[str] = None
     message: str
-    priority: str = "Medium"  # Low, Medium, High
+    priority: str = "Medium"
     due_date: Optional[str] = None
 
 class RequestUpdate(BaseModel):
@@ -159,7 +113,6 @@ def parse_currency(value) -> float:
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
-        # Remove currency symbols, commas, spaces
         cleaned = re.sub(r'[^\d.\-]', '', value.replace(',', ''))
         try:
             return float(cleaned) if cleaned else 0.0
@@ -191,127 +144,6 @@ def infer_deployment_type(vendor: str, title: str) -> str:
             return "On-Prem"
     return "Unknown"
 
-def create_token(user_id: str, email: str, role: str) -> str:
-    """Create JWT token"""
-    payload = {
-        "sub": user_id,
-        "email": email,
-        "role": role,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """Verify JWT token and return user"""
-    try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return {"id": payload["sub"], "email": payload["email"], "role": payload["role"]}
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-async def get_user_cost_center_filter(current_user: dict) -> Optional[dict]:
-    """Get cost center filter based on user role and assigned cost centers"""
-    if current_user["role"] == "admin":
-        return None  # No filter - sees everything
-    
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
-    if not user:
-        return None
-    
-    assigned = user.get("assigned_cost_centers", [])
-    if not assigned:
-        return None  # No restriction if not assigned
-    
-    # Filter by assigned cost centers
-    return {"cost_center_primary": {"$in": assigned}}
-
-# ============ AUTH ROUTES ============
-
-@api_router.post("/auth/register", response_model=TokenResponse)
-async def register(user: UserCreate):
-    existing = await db.users.find_one({"email": user.email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    hashed_password = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
-    user_id = str(uuid.uuid4())
-    
-    user_doc = {
-        "id": user_id,
-        "email": user.email,
-        "password": hashed_password,
-        "name": user.name,
-        "role": user.role,
-        "assigned_cost_centers": user.assigned_cost_centers or [],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(user_doc)
-    
-    token = create_token(user_id, user.email, user.role)
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(id=user_id, email=user.email, name=user.name, role=user.role, assigned_cost_centers=user.assigned_cost_centers or [])
-    )
-
-@api_router.post("/auth/login", response_model=TokenResponse)
-async def login(credentials: UserLogin):
-    user = await db.users.find_one({"email": credentials.email})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    if not bcrypt.checkpw(credentials.password.encode(), user["password"].encode()):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    token = create_token(user["id"], user["email"], user["role"])
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user["id"], 
-            email=user["email"], 
-            name=user["name"], 
-            role=user["role"],
-            assigned_cost_centers=user.get("assigned_cost_centers", [])
-        )
-    )
-
-@api_router.get("/auth/me")
-async def get_me(current_user: dict = Depends(get_current_user)):
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    role = user.get("role", "viewer")
-    can_edit = role in ["admin", "manager"]
-    
-    dashboard_view = "executive"
-    if role == "manager":
-        dashboard_view = "manager"
-    elif role == "viewer":
-        dashboard_view = "analyst"
-    
-    return UserProfileResponse(
-        id=user["id"],
-        email=user["email"],
-        name=user["name"],
-        role=role,
-        assigned_cost_centers=user.get("assigned_cost_centers", []),
-        can_edit=can_edit,
-        dashboard_view=dashboard_view
-    )
-
-@api_router.put("/auth/me")
-async def update_me(update: UserUpdate, current_user: dict = Depends(get_current_user)):
-    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
-    
-    result = await db.users.update_one({"id": current_user["id"]}, {"$set": update_data})
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "Profile updated"}
-
 # ============ APPLICATIONS ROUTES ============
 
 @api_router.get("/applications")
@@ -325,15 +157,9 @@ async def get_applications(
     sort_by: Optional[str] = "title",
     sort_order: Optional[str] = "asc",
     skip: int = 0,
-    limit: int = 100,
-    current_user: dict = Depends(get_current_user)
+    limit: int = 100
 ):
     query = {}
-    
-    # Apply role-based cost center filter
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        query.update(cc_filter)
     
     if search:
         query["$or"] = [
@@ -360,14 +186,14 @@ async def get_applications(
     return {"applications": applications, "total": total}
 
 @api_router.get("/applications/{app_id}")
-async def get_application(app_id: str, current_user: dict = Depends(get_current_user)):
+async def get_application(app_id: str):
     app = await db.applications.find_one({"app_id": app_id}, {"_id": 0})
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
     return app
 
 @api_router.post("/applications")
-async def create_application(app: ApplicationCreate, current_user: dict = Depends(get_current_user)):
+async def create_application(app: ApplicationCreate):
     app_id = str(uuid.uuid4())
     app_doc = app.model_dump()
     app_doc["app_id"] = app_id
@@ -377,11 +203,7 @@ async def create_application(app: ApplicationCreate, current_user: dict = Depend
     return {"app_id": app_id, "message": "Application created"}
 
 @api_router.put("/applications/{app_id}")
-async def update_application(app_id: str, update: ApplicationUpdate, current_user: dict = Depends(get_current_user)):
-    # Viewers cannot edit
-    if current_user["role"] == "viewer":
-        raise HTTPException(status_code=403, detail="Viewers cannot edit applications")
-    
+async def update_application(app_id: str, update: ApplicationUpdate):
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
     update_data["last_updated"] = datetime.now(timezone.utc).isoformat()
     
@@ -391,7 +213,7 @@ async def update_application(app_id: str, update: ApplicationUpdate, current_use
     return {"message": "Application updated"}
 
 @api_router.delete("/applications/{app_id}")
-async def delete_application(app_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_application(app_id: str):
     result = await db.applications.delete_one({"app_id": app_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Application not found")
@@ -403,8 +225,7 @@ async def delete_application(app_id: str, current_user: dict = Depends(get_curre
 async def get_requests(
     status: Optional[str] = None,
     priority: Optional[str] = None,
-    app_id: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    app_id: Optional[str] = None
 ):
     query = {}
     if status:
@@ -418,15 +239,14 @@ async def get_requests(
     return {"requests": requests}
 
 @api_router.get("/requests/{request_id}")
-async def get_request(request_id: str, current_user: dict = Depends(get_current_user)):
+async def get_request(request_id: str):
     req = await db.requests.find_one({"request_id": request_id}, {"_id": 0})
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
     return req
 
 @api_router.post("/requests")
-async def create_request(req: RequestCreate, current_user: dict = Depends(get_current_user)):
-    # Verify app exists
+async def create_request(req: RequestCreate):
     app = await db.applications.find_one({"app_id": req.app_id}, {"_id": 0})
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
@@ -440,14 +260,14 @@ async def create_request(req: RequestCreate, current_user: dict = Depends(get_cu
     req_doc["status"] = "Draft"
     req_doc["created_at"] = now
     req_doc["updated_at"] = now
-    req_doc["created_by"] = current_user["email"]
+    req_doc["created_by"] = "user"
     req_doc["response_notes"] = None
     
     await db.requests.insert_one(req_doc)
     return {"request_id": request_id, "message": "Request created"}
 
 @api_router.put("/requests/{request_id}")
-async def update_request(request_id: str, update: RequestUpdate, current_user: dict = Depends(get_current_user)):
+async def update_request(request_id: str, update: RequestUpdate):
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
@@ -457,7 +277,7 @@ async def update_request(request_id: str, update: RequestUpdate, current_user: d
     return {"message": "Request updated"}
 
 @api_router.post("/requests/{request_id}/send")
-async def send_request(request_id: str, current_user: dict = Depends(get_current_user)):
+async def send_request(request_id: str):
     """Mark request as sent (in-app only, no actual email)"""
     result = await db.requests.update_one(
         {"request_id": request_id},
@@ -476,15 +296,9 @@ async def get_dashboard_kpis(
     functional_category: Optional[str] = None,
     deployment_type: Optional[str] = None,
     cost_center: Optional[str] = None,
-    vendor: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    vendor: Optional[str] = None
 ):
     query = {}
-    
-    # Apply role-based cost center filter
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        query.update(cc_filter)
     
     if search:
         query["$or"] = [
@@ -526,16 +340,9 @@ async def get_dashboard_kpis(
     }
 
 @api_router.get("/dashboard/spend-by-category")
-async def get_spend_by_category(current_user: dict = Depends(get_current_user)):
-    match_stage = {"functional_category": {"$ne": None, "$ne": ""}}
-    
-    # Apply role-based cost center filter
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        match_stage.update(cc_filter)
-    
+async def get_spend_by_category():
     pipeline = [
-        {"$match": match_stage},
+        {"$match": {"functional_category": {"$ne": None, "$ne": ""}}},
         {"$group": {
             "_id": "$functional_category",
             "total_spend": {"$sum": "$contract_annual_spend"},
@@ -548,15 +355,9 @@ async def get_spend_by_category(current_user: dict = Depends(get_current_user)):
     return [{"category": r["_id"], "total_spend": r["total_spend"], "count": r["count"]} for r in results]
 
 @api_router.get("/dashboard/apps-by-category")
-async def get_apps_by_category(current_user: dict = Depends(get_current_user)):
-    match_stage = {"functional_category": {"$ne": None, "$ne": ""}}
-    
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        match_stage.update(cc_filter)
-    
+async def get_apps_by_category():
     pipeline = [
-        {"$match": match_stage},
+        {"$match": {"functional_category": {"$ne": None, "$ne": ""}}},
         {"$group": {
             "_id": "$functional_category",
             "count": {"$sum": 1}
@@ -568,35 +369,24 @@ async def get_apps_by_category(current_user: dict = Depends(get_current_user)):
     return [{"category": r["_id"], "count": r["count"]} for r in results]
 
 @api_router.get("/dashboard/spend-by-cost-center")
-async def get_spend_by_cost_center(current_user: dict = Depends(get_current_user)):
-    match_stage = {"cost_center_primary": {"$ne": None, "$ne": ""}}
-    
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        match_stage.update(cc_filter)
-    
+async def get_spend_by_cost_center():
     pipeline = [
-        {"$match": match_stage},
+        {"$match": {"cost_center_primary": {"$ne": None, "$ne": ""}}},
         {"$group": {
             "_id": "$cost_center_primary",
-            "total_spend": {"$sum": "$contract_annual_spend"}
+            "total_spend": {"$sum": "$contract_annual_spend"},
+            "count": {"$sum": 1}
         }},
         {"$sort": {"total_spend": -1}},
         {"$limit": 10}
     ]
     results = await db.applications.aggregate(pipeline).to_list(10)
-    return [{"cost_center": r["_id"], "total_spend": r["total_spend"]} for r in results]
+    return [{"cost_center": r["_id"], "total_spend": r["total_spend"], "count": r.get("count", 0)} for r in results]
 
 @api_router.get("/dashboard/users-by-category")
-async def get_users_by_category(current_user: dict = Depends(get_current_user)):
-    match_stage = {"functional_category": {"$ne": None, "$ne": ""}}
-    
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        match_stage.update(cc_filter)
-    
+async def get_users_by_category():
     pipeline = [
-        {"$match": match_stage},
+        {"$match": {"functional_category": {"$ne": None, "$ne": ""}}},
         {"$group": {
             "_id": "$functional_category",
             "total_engaged": {"$sum": "$engaged_users"},
@@ -612,94 +402,50 @@ async def get_users_by_category(current_user: dict = Depends(get_current_user)):
 @api_router.get("/dashboard/high-spend-low-engagement")
 async def get_high_spend_low_engagement(
     spend_threshold: float = 50000,
-    engagement_threshold: int = 100,
-    current_user: dict = Depends(get_current_user)
+    engagement_threshold: int = 100
 ):
     query = {
         "contract_annual_spend": {"$gte": spend_threshold},
         "engaged_users": {"$lte": engagement_threshold}
     }
     
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        query.update(cc_filter)
-    
     apps = await db.applications.find(query, {"_id": 0}).sort("contract_annual_spend", -1).to_list(20)
     return apps
 
 @api_router.get("/dashboard/executive-summary")
-async def get_executive_summary(current_user: dict = Depends(get_current_user)):
-    query = {}
-    cc_filter = await get_user_cost_center_filter(current_user)
-    if cc_filter:
-        query.update(cc_filter)
-    
-    apps = await db.applications.find(query, {"_id": 0}).to_list(10000)
-    user_data = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
-    user_role = user_data.get("role", "viewer") if user_data else "viewer"
-    assigned_cc = user_data.get("assigned_cost_centers", []) if user_data else []
+async def get_executive_summary():
+    apps = await db.applications.find({}, {"_id": 0}).to_list(10000)
     
     total_apps = len(apps)
     total_spend = sum(a.get("contract_annual_spend", 0) or 0 for a in apps)
     total_engaged = sum(a.get("engaged_users", 0) or 0 for a in apps)
     total_provisioned = sum(a.get("provisioned_users", 0) or 0 for a in apps)
-    total_sso = sum(a.get("users_logging_in_via_sso", 0) or 0 for a in apps)
     
-    # Deployment breakdown
     deployment_counts = {"Cloud": 0, "On-Prem": 0, "Hybrid": 0, "Unknown": 0}
     for app in apps:
         dt = app.get("deployment_type", "Unknown")
         if dt in deployment_counts:
             deployment_counts[dt] += 1
     
-    # Top spend categories
     category_spend = {}
     for app in apps:
         cat = app.get("functional_category") or "Uncategorized"
         category_spend[cat] = category_spend.get(cat, 0) + (app.get("contract_annual_spend", 0) or 0)
     top_categories = sorted(category_spend.items(), key=lambda x: x[1], reverse=True)[:3]
     
-    # Missing owner count
     missing_owner = sum(1 for a in apps if not a.get("product_owner_name"))
-    
-    # High spend low engagement
     high_spend_low_engage = sum(1 for a in apps if (a.get("contract_annual_spend", 0) or 0) > 50000 and (a.get("engaged_users", 0) or 0) < 100)
     
-    # Build role-appropriate summary
-    if user_role == "admin":
-        # Executive view - full portfolio
-        summary_parts = [
-            f"Portfolio Overview: {total_apps} applications with ${total_spend:,.0f} in annual contract spend.",
-        ]
-        if top_categories:
-            summary_parts.append(f"Top spend: {', '.join([f'{c[0]} (${c[1]:,.0f})' for c in top_categories[:2]])}.")
-        summary_parts.append(f"Deployment: {deployment_counts['Cloud']} Cloud, {deployment_counts['On-Prem']} On-Prem, {deployment_counts['Unknown']} Unknown.")
-        if high_spend_low_engage > 0:
-            summary_parts.append(f"⚠️ {high_spend_low_engage} apps need review (high spend, low engagement).")
-        if missing_owner > 0:
-            summary_parts.append(f"📋 {missing_owner} apps missing owner.")
-    elif user_role == "manager":
-        # Manager view - multi cost center focus
-        cc_text = f"Cost Centers: {', '.join(assigned_cc)}" if assigned_cc else "All Cost Centers"
-        summary_parts = [
-            f"IT Management View ({cc_text}): {total_apps} applications, ${total_spend:,.0f} annual spend.",
-        ]
-        if top_categories:
-            summary_parts.append(f"Top categories: {', '.join([c[0] for c in top_categories[:3]])}.")
-        summary_parts.append(f"{total_engaged:,} engaged users across your portfolio.")
-        if high_spend_low_engage > 0:
-            summary_parts.append(f"⚠️ {high_spend_low_engage} apps flagged for optimization review.")
-    else:
-        # Analyst view - usage metrics focus
-        cc_text = f"Cost Center: {assigned_cc[0]}" if assigned_cc else "All Cost Centers"
-        summary_parts = [
-            f"Usage Analytics ({cc_text}): {total_apps} applications in scope.",
-        ]
-        summary_parts.append(f"👥 {total_engaged:,} engaged users | {total_provisioned:,} provisioned | {total_sso:,} SSO logins.")
-        engagement_rate = (total_engaged / total_provisioned * 100) if total_provisioned > 0 else 0
-        summary_parts.append(f"Engagement rate: {engagement_rate:.1f}%.")
-        if deployment_counts['Unknown'] > 0:
-            summary_parts.append(f"📊 {deployment_counts['Unknown']} apps need deployment classification.")
+    summary_parts = [
+        f"Portfolio Overview: {total_apps} applications with ${total_spend:,.0f} in annual contract spend.",
+    ]
+    if top_categories:
+        summary_parts.append(f"Top spend: {', '.join([f'{c[0]} (${c[1]:,.0f})' for c in top_categories[:2]])}.")
+    summary_parts.append(f"Deployment: {deployment_counts['Cloud']} Cloud, {deployment_counts['On-Prem']} On-Prem, {deployment_counts['Unknown']} Unknown.")
+    if high_spend_low_engage > 0:
+        summary_parts.append(f"⚠️ {high_spend_low_engage} apps need review (high spend, low engagement).")
+    if missing_owner > 0:
+        summary_parts.append(f"📋 {missing_owner} apps missing owner.")
     
     return {
         "summary": " ".join(summary_parts),
@@ -708,18 +454,16 @@ async def get_executive_summary(current_user: dict = Depends(get_current_user)):
             "total_spend": total_spend,
             "total_engaged": total_engaged,
             "total_provisioned": total_provisioned,
-            "total_sso": total_sso,
             "deployment_counts": deployment_counts,
             "missing_owner_count": missing_owner,
             "high_spend_low_engage_count": high_spend_low_engage
-        },
-        "view_type": user_role
+        }
     }
 
 # ============ FILTER OPTIONS ============
 
 @api_router.get("/filters/options")
-async def get_filter_options(current_user: dict = Depends(get_current_user)):
+async def get_filter_options():
     statuses = await db.applications.distinct("status")
     categories = await db.applications.distinct("functional_category")
     vendors = await db.applications.distinct("vendor")
@@ -736,7 +480,7 @@ async def get_filter_options(current_user: dict = Depends(get_current_user)):
 # ============ IMPORT ROUTES ============
 
 @api_router.post("/import/upload")
-async def import_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+async def import_file(file: UploadFile = File(...)):
     """Import Excel or CSV file"""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
@@ -753,7 +497,6 @@ async def import_file(file: UploadFile = File(...), current_user: dict = Depends
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
     
-    # Column mapping
     column_map = {
         "Title": "title",
         "App_status": "status",
@@ -808,15 +551,13 @@ async def import_file(file: UploadFile = File(...), current_user: dict = Depends
                     else:
                         app_doc[db_col] = str(value) if value else None
             
-            # Infer deployment type
             app_doc["deployment_type"] = infer_deployment_type(
                 app_doc.get("vendor", ""),
                 app_doc.get("title", "")
             )
             
-            # Set defaults
             if not app_doc.get("title"):
-                continue  # Skip rows without title
+                continue
             
             app_doc.setdefault("status", "unknown")
             app_doc.setdefault("users_with_sso_access", 0)
@@ -842,7 +583,7 @@ async def import_file(file: UploadFile = File(...), current_user: dict = Depends
     }
 
 @api_router.delete("/import/clear")
-async def clear_data(current_user: dict = Depends(get_current_user)):
+async def clear_data():
     """Clear all applications (for re-import)"""
     result = await db.applications.delete_many({})
     await db.requests.delete_many({})
@@ -864,7 +605,7 @@ async def get_template():
 # ============ SEED DATA ============
 
 @api_router.post("/seed")
-async def seed_sample_data(current_user: dict = Depends(get_current_user)):
+async def seed_sample_data():
     """Generate sample data if database is empty"""
     count = await db.applications.count_documents({})
     if count > 0:
@@ -876,26 +617,6 @@ async def seed_sample_data(current_user: dict = Depends(get_current_user)):
         {"title": "Workday HCM", "vendor": "Workday", "functional_category": "Human Resources", "deployment_type": "Cloud", "contract_annual_spend": 980000, "engaged_users": 450, "status": "approved", "product_owner_name": "Mike Johnson", "cost_center_primary": "HR"},
         {"title": "ServiceNow ITSM", "vendor": "ServiceNow", "functional_category": "IT Service Management", "deployment_type": "Cloud", "contract_annual_spend": 750000, "engaged_users": 300, "status": "approved", "product_owner_name": "Sarah Wilson", "cost_center_primary": "IT"},
         {"title": "SAP ERP", "vendor": "SAP", "functional_category": "Finance & Accounting", "deployment_type": "Hybrid", "contract_annual_spend": 2100000, "engaged_users": 180, "status": "approved", "product_owner_name": "Robert Brown", "cost_center_primary": "Finance"},
-        {"title": "Slack", "vendor": "Salesforce", "functional_category": "Collaboration", "deployment_type": "Cloud", "contract_annual_spend": 120000, "engaged_users": 1800, "status": "approved", "product_owner_name": "Emily Davis", "cost_center_primary": "IT"},
-        {"title": "Zoom", "vendor": "Zoom", "functional_category": "Collaboration", "deployment_type": "Cloud", "contract_annual_spend": 85000, "engaged_users": 2200, "status": "approved", "cost_center_primary": "IT"},
-        {"title": "Tableau", "vendor": "Salesforce", "functional_category": "Business Intelligence", "deployment_type": "Cloud", "contract_annual_spend": 320000, "engaged_users": 120, "status": "approved", "cost_center_primary": "Analytics"},
-        {"title": "Jira", "vendor": "Atlassian", "functional_category": "Project Management", "deployment_type": "Cloud", "contract_annual_spend": 95000, "engaged_users": 650, "status": "approved", "cost_center_primary": "Engineering"},
-        {"title": "Legacy CRM", "vendor": "Internal", "functional_category": "Sales Engagement", "deployment_type": "On-Prem", "contract_annual_spend": 250000, "engaged_users": 45, "status": "deprecated", "cost_center_primary": "IT"},
-        {"title": "Oracle Database", "vendor": "Oracle", "functional_category": "Database", "deployment_type": "On-Prem", "contract_annual_spend": 580000, "engaged_users": 25, "status": "approved", "cost_center_primary": "IT"},
-        {"title": "Concur", "vendor": "SAP", "functional_category": "Finance & Accounting", "deployment_type": "Cloud", "contract_annual_spend": 175000, "engaged_users": 890, "status": "approved", "cost_center_primary": "Finance"},
-        {"title": "DocuSign", "vendor": "DocuSign", "functional_category": "Document Management", "deployment_type": "Cloud", "contract_annual_spend": 65000, "engaged_users": 420, "status": "approved", "cost_center_primary": "Legal"},
-        {"title": "Okta", "vendor": "Okta", "functional_category": "Security & Identity", "deployment_type": "Cloud", "contract_annual_spend": 280000, "engaged_users": 2500, "status": "approved", "product_owner_name": "Chris Lee", "cost_center_primary": "IT Security"},
-        {"title": "Splunk", "vendor": "Splunk", "functional_category": "Security & Identity", "deployment_type": "Hybrid", "contract_annual_spend": 450000, "engaged_users": 35, "status": "approved", "cost_center_primary": "IT Security"},
-        {"title": "Unknown App 1", "vendor": "Unknown Vendor", "functional_category": "Other", "deployment_type": "Unknown", "contract_annual_spend": 12000, "engaged_users": 10, "status": "under_review", "cost_center_primary": "IT"},
-        {"title": "Marketo", "vendor": "Adobe", "functional_category": "Marketing", "deployment_type": "Cloud", "contract_annual_spend": 380000, "engaged_users": 85, "status": "approved", "cost_center_primary": "Marketing"},
-        {"title": "Greenhouse", "vendor": "Greenhouse", "functional_category": "Human Resources", "deployment_type": "Cloud", "contract_annual_spend": 95000, "engaged_users": 120, "status": "approved", "cost_center_primary": "HR"},
-        {"title": "Coupa", "vendor": "Coupa", "functional_category": "Procurement", "deployment_type": "Cloud", "contract_annual_spend": 220000, "engaged_users": 180, "status": "approved", "cost_center_primary": "Procurement"},
-        {"title": "Box", "vendor": "Box", "functional_category": "Document Management", "deployment_type": "Cloud", "contract_annual_spend": 110000, "engaged_users": 1200, "status": "approved", "cost_center_primary": "IT"},
-        {"title": "Snowflake", "vendor": "Snowflake", "functional_category": "Data Platform", "deployment_type": "Cloud", "contract_annual_spend": 680000, "engaged_users": 45, "status": "approved", "cost_center_primary": "Data Engineering"},
-        {"title": "Power BI", "vendor": "Microsoft", "functional_category": "Business Intelligence", "deployment_type": "Cloud", "contract_annual_spend": 45000, "engaged_users": 280, "status": "approved", "cost_center_primary": "Analytics"},
-        {"title": "GitLab", "vendor": "GitLab", "functional_category": "Development Tools", "deployment_type": "Cloud", "contract_annual_spend": 125000, "engaged_users": 380, "status": "approved", "cost_center_primary": "Engineering"},
-        {"title": "Confluence", "vendor": "Atlassian", "functional_category": "Collaboration", "deployment_type": "Cloud", "contract_annual_spend": 55000, "engaged_users": 720, "status": "approved", "cost_center_primary": "Engineering"},
-        {"title": "Legacy HR System", "vendor": "Internal", "functional_category": "Human Resources", "deployment_type": "On-Prem", "contract_annual_spend": 180000, "engaged_users": 30, "status": "deprecated", "cost_center_primary": "HR"},
     ]
     
     for app in sample_apps:
@@ -910,39 +631,7 @@ async def seed_sample_data(current_user: dict = Depends(get_current_user)):
         
     await db.applications.insert_many(sample_apps)
     
-    # Create a few sample requests
-    sample_requests = [
-        {
-            "request_id": str(uuid.uuid4()),
-            "app_id": sample_apps[0]["app_id"],
-            "app_title": sample_apps[0]["title"],
-            "request_type": "Usage Validation",
-            "to_role": "Product Owner",
-            "to_name": sample_apps[0].get("product_owner_name"),
-            "message": "Please validate the current user count and engagement metrics for Q4 review.",
-            "priority": "High",
-            "status": "Sent",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "created_by": "demo@company.com"
-        },
-        {
-            "request_id": str(uuid.uuid4()),
-            "app_id": sample_apps[9]["app_id"],
-            "app_title": sample_apps[9]["title"],
-            "request_type": "Cost Validation",
-            "to_role": "IT Contact",
-            "message": "Need to understand ongoing maintenance costs for deprecation planning.",
-            "priority": "Medium",
-            "status": "Awaiting Response",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "created_by": "demo@company.com"
-        }
-    ]
-    await db.requests.insert_many(sample_requests)
-    
-    return {"message": f"Seeded {len(sample_apps)} sample applications and {len(sample_requests)} requests"}
+    return {"message": f"Seeded {len(sample_apps)} sample applications"}
 
 # ============ MAIN ============
 

@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 import {
   ArrowLeft, Building2, DollarSign, Users, Database, User, Mail,
-  Edit2, Save, X, Send, Clock, ChevronRight, Lock
+  Edit2, Save, X, Send, ChevronRight, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -37,16 +39,45 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 };
 
+const formatCurrencyShort = (value) => {
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+  return `$${value}`;
+};
+
+// Generate mock YoY data based on current values
+const generateYoYData = (app) => {
+  const currentSpend = app?.contract_annual_spend || 0;
+  const prevSpend = app?.prev_fiscal_year_expense_total || currentSpend * 0.9;
+  const currentUsers = app?.engaged_users || 0;
+  
+  // Generate 5 years of trend data with some variance
+  const years = ['2020', '2021', '2022', '2023', '2024'];
+  const baseSpend = prevSpend * 0.7;
+  const baseUsers = Math.floor(currentUsers * 0.5);
+  
+  return years.map((year, index) => {
+    const growthFactor = 1 + (index * 0.15) + (Math.random() * 0.1 - 0.05);
+    const userGrowth = 1 + (index * 0.2) + (Math.random() * 0.15 - 0.075);
+    
+    return {
+      year,
+      spend: Math.round(baseSpend * growthFactor),
+      users: Math.round(baseUsers * userGrowth),
+    };
+  });
+};
+
 const ApplicationDetailPage = () => {
   const { appId } = useParams();
   const navigate = useNavigate();
-  const { canEdit } = useAuth();
   const [loading, setLoading] = useState(true);
   const [app, setApp] = useState(null);
   const [requests, setRequests] = useState([]);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [yoyData, setYoyData] = useState([]);
   const [requestForm, setRequestForm] = useState({
     request_type: 'Owner Info',
     to_role: 'Product Owner',
@@ -67,6 +98,7 @@ const ApplicationDetailPage = () => {
       const res = await axios.get(`${API}/applications/${appId}`);
       setApp(res.data);
       setEditForm(res.data);
+      setYoyData(generateYoYData(res.data));
     } catch (error) {
       console.error('Fetch error:', error);
       toast.error('Failed to load application');
@@ -103,7 +135,7 @@ const ApplicationDetailPage = () => {
     }
     
     try {
-      const res = await axios.post(`${API}/requests`, {
+      await axios.post(`${API}/requests`, {
         app_id: appId,
         ...requestForm
       });
@@ -124,7 +156,6 @@ const ApplicationDetailPage = () => {
   };
 
   const openRequestModal = () => {
-    // Prefill contact info based on role
     const contactMap = {
       'Product Owner': app?.product_owner_name,
       'Data Steward': app?.data_steward_name,
@@ -165,6 +196,19 @@ const ApplicationDetailPage = () => {
       default: return 'bg-slate-100 text-slate-600';
     }
   };
+
+  // Calculate YoY changes
+  const calculateYoYChange = () => {
+    if (yoyData.length < 2) return { spend: 0, users: 0 };
+    const current = yoyData[yoyData.length - 1];
+    const previous = yoyData[yoyData.length - 2];
+    return {
+      spend: previous.spend > 0 ? ((current.spend - previous.spend) / previous.spend * 100).toFixed(1) : 0,
+      users: previous.users > 0 ? ((current.users - previous.users) / previous.users * 100).toFixed(1) : 0
+    };
+  };
+
+  const yoyChange = calculateYoYChange();
 
   if (loading) {
     return (
@@ -229,17 +273,10 @@ const ApplicationDetailPage = () => {
               </>
             ) : (
               <>
-                {canEdit() ? (
-                  <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="edit-app">
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                ) : (
-                  <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 flex items-center gap-1 px-3 py-1">
-                    <Lock className="w-3 h-3" />
-                    Read Only
-                  </Badge>
-                )}
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="edit-app">
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
                 <Button size="sm" onClick={openRequestModal} className="bg-zinc-900 hover:bg-zinc-800" data-testid="request-info-btn">
                   <Mail className="w-4 h-4 mr-2" />
                   Request Info
@@ -254,9 +291,9 @@ const ApplicationDetailPage = () => {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="bg-slate-100">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+          <TabsTrigger value="trends" data-testid="tab-trends">YoY Trends</TabsTrigger>
           <TabsTrigger value="usage" data-testid="tab-usage">Usage</TabsTrigger>
           <TabsTrigger value="financials" data-testid="tab-financials">Financials</TabsTrigger>
-          <TabsTrigger value="data" data-testid="tab-data">Data</TabsTrigger>
           <TabsTrigger value="ownership" data-testid="tab-ownership">Ownership</TabsTrigger>
           <TabsTrigger value="requests" data-testid="tab-requests">Requests ({requests.length})</TabsTrigger>
         </TabsList>
@@ -272,11 +309,7 @@ const ApplicationDetailPage = () => {
                 <div>
                   <Label className="text-slate-500">Description</Label>
                   {editing ? (
-                    <Textarea
-                      value={editForm.short_description || ''}
-                      onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })}
-                      className="mt-1"
-                    />
+                    <Textarea value={editForm.short_description || ''} onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })} className="mt-1" />
                   ) : (
                     <p className="text-zinc-900 mt-1">{app.short_description || 'No description available'}</p>
                   )}
@@ -284,37 +317,16 @@ const ApplicationDetailPage = () => {
                 <div>
                   <Label className="text-slate-500">Functional Category</Label>
                   {editing ? (
-                    <Input
-                      value={editForm.functional_category || ''}
-                      onChange={(e) => setEditForm({ ...editForm, functional_category: e.target.value })}
-                      className="mt-1"
-                    />
+                    <Input value={editForm.functional_category || ''} onChange={(e) => setEditForm({ ...editForm, functional_category: e.target.value })} className="mt-1" />
                   ) : (
                     <p className="text-zinc-900 mt-1">{app.functional_category || '-'}</p>
                   )}
                 </div>
                 <div>
-                  <Label className="text-slate-500">Capabilities</Label>
-                  {editing ? (
-                    <Input
-                      value={editForm.capabilities || ''}
-                      onChange={(e) => setEditForm({ ...editForm, capabilities: e.target.value })}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <p className="text-zinc-900 mt-1">{app.capabilities || '-'}</p>
-                  )}
-                </div>
-                <div>
                   <Label className="text-slate-500">Deployment Type</Label>
                   {editing ? (
-                    <Select 
-                      value={editForm.deployment_type || 'Unknown'} 
-                      onValueChange={(v) => setEditForm({ ...editForm, deployment_type: v })}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={editForm.deployment_type || 'Unknown'} onValueChange={(v) => setEditForm({ ...editForm, deployment_type: v })}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Cloud">Cloud</SelectItem>
                         <SelectItem value="On-Prem">On-Prem</SelectItem>
@@ -328,54 +340,198 @@ const ApplicationDetailPage = () => {
                     </Badge>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Labels & Notes</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-slate-500">Labels</Label>
-                  {editing ? (
-                    <Input
-                      value={editForm.labels || ''}
-                      onChange={(e) => setEditForm({ ...editForm, labels: e.target.value })}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <p className="text-zinc-900 mt-1">{app.labels || '-'}</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-slate-500">Notes</Label>
-                  {editing ? (
-                    <Textarea
-                      value={editForm.notes || ''}
-                      onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                      className="mt-1"
-                      rows={4}
-                    />
-                  ) : (
-                    <p className="text-zinc-900 mt-1 whitespace-pre-wrap">{app.notes || 'No notes'}</p>
-                  )}
-                </div>
                 <div>
                   <Label className="text-slate-500">Cost Center</Label>
                   {editing ? (
-                    <Input
-                      value={editForm.cost_center_primary || ''}
-                      onChange={(e) => setEditForm({ ...editForm, cost_center_primary: e.target.value })}
-                      className="mt-1"
-                    />
+                    <Input value={editForm.cost_center_primary || ''} onChange={(e) => setEditForm({ ...editForm, cost_center_primary: e.target.value })} className="mt-1" />
                   ) : (
                     <p className="text-zinc-900 mt-1">{app.cost_center_primary || '-'}</p>
                   )}
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-lime-50 rounded-lg">
+                    <p className="text-sm text-slate-500">Annual Spend</p>
+                    <p className="text-xl font-heading font-bold text-zinc-900">{formatCurrency(app.contract_annual_spend)}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500">YTD Expense</p>
+                    <p className="text-xl font-heading font-bold text-zinc-900">{formatCurrency(app.fiscal_ytd_expense_total)}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500">Engaged Users</p>
+                    <p className="text-xl font-heading font-bold text-zinc-900">{app.engaged_users || 0}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500">Provisioned</p>
+                    <p className="text-xl font-heading font-bold text-zinc-900">{app.provisioned_users || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        </TabsContent>
+
+        {/* YoY Trends Tab */}
+        <TabsContent value="trends" className="space-y-6">
+          <Card className="border-l-4 border-l-lime-500">
+            <CardContent className="p-4">
+              <p className="text-sm text-slate-600">
+                <strong>Note:</strong> Year-over-year trend data shown below is generated for demonstration purposes. 
+                Actual historical data would come from your data source.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* YoY Change Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Spend YoY Change</p>
+                    <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                      {yoyChange.spend > 0 ? '+' : ''}{yoyChange.spend}%
+                    </p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${parseFloat(yoyChange.spend) > 0 ? 'bg-red-100' : 'bg-lime-100'}`}>
+                    {parseFloat(yoyChange.spend) > 0 ? (
+                      <TrendingUp className="w-6 h-6 text-red-600" />
+                    ) : (
+                      <TrendingDown className="w-6 h-6 text-lime-600" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">vs. previous year</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Users YoY Change</p>
+                    <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                      {yoyChange.users > 0 ? '+' : ''}{yoyChange.users}%
+                    </p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${parseFloat(yoyChange.users) > 0 ? 'bg-lime-100' : 'bg-amber-100'}`}>
+                    {parseFloat(yoyChange.users) > 0 ? (
+                      <TrendingUp className="w-6 h-6 text-lime-600" />
+                    ) : (
+                      <TrendingDown className="w-6 h-6 text-amber-600" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">vs. previous year</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Spend Trend Chart */}
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-heading">Spend Trend (5 Year)</CardTitle>
+              <CardDescription>Annual contract spend over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                    <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v) => formatCurrency(v)} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="spend" 
+                      stroke="#84CC16" 
+                      strokeWidth={3}
+                      dot={{ fill: '#84CC16', strokeWidth: 2, r: 5 }}
+                      activeDot={{ r: 7 }}
+                      name="Annual Spend"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Users Trend Chart */}
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-heading">User Engagement Trend (5 Year)</CardTitle>
+              <CardDescription>Engaged users over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="users" 
+                      stroke="#18181B" 
+                      strokeWidth={3}
+                      dot={{ fill: '#18181B', strokeWidth: 2, r: 5 }}
+                      activeDot={{ r: 7 }}
+                      name="Engaged Users"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Combined Chart */}
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-heading">Spend vs Users Comparison</CardTitle>
+              <CardDescription>Cost efficiency over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={yoyData} margin={{ left: 20, right: 60, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="left" tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value, name) => name === 'Annual Spend' ? formatCurrency(value) : value} />
+                    <Legend />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="spend" 
+                      stroke="#84CC16" 
+                      strokeWidth={2}
+                      dot={{ fill: '#84CC16', r: 4 }}
+                      name="Annual Spend"
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="users" 
+                      stroke="#64748B" 
+                      strokeWidth={2}
+                      dot={{ fill: '#64748B', r: 4 }}
+                      name="Engaged Users"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Usage Tab */}
@@ -387,70 +543,29 @@ const ApplicationDetailPage = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <Users className="w-8 h-8 text-lime-600 mx-auto mb-2" />
-                  <p className="text-3xl font-heading font-bold text-zinc-900">
-                    {editing ? (
-                      <Input
-                        type="number"
-                        value={editForm.engaged_users || 0}
-                        onChange={(e) => setEditForm({ ...editForm, engaged_users: parseInt(e.target.value) || 0 })}
-                        className="text-center"
-                      />
-                    ) : (
-                      app.engaged_users || 0
-                    )}
-                  </p>
-                  <p className="text-sm text-slate-500">Engaged Users</p>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <Users className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                  <p className="text-3xl font-heading font-bold text-zinc-900">
-                    {editing ? (
-                      <Input
-                        type="number"
-                        value={editForm.provisioned_users || 0}
-                        onChange={(e) => setEditForm({ ...editForm, provisioned_users: parseInt(e.target.value) || 0 })}
-                        className="text-center"
-                      />
-                    ) : (
-                      app.provisioned_users || 0
-                    )}
-                  </p>
-                  <p className="text-sm text-slate-500">Provisioned Users</p>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <Users className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                  <p className="text-3xl font-heading font-bold text-zinc-900">
-                    {editing ? (
-                      <Input
-                        type="number"
-                        value={editForm.users_with_sso_access || 0}
-                        onChange={(e) => setEditForm({ ...editForm, users_with_sso_access: parseInt(e.target.value) || 0 })}
-                        className="text-center"
-                      />
-                    ) : (
-                      app.users_with_sso_access || 0
-                    )}
-                  </p>
-                  <p className="text-sm text-slate-500">SSO Access</p>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <Users className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                  <p className="text-3xl font-heading font-bold text-zinc-900">
-                    {editing ? (
-                      <Input
-                        type="number"
-                        value={editForm.users_logging_in_via_sso || 0}
-                        onChange={(e) => setEditForm({ ...editForm, users_logging_in_via_sso: parseInt(e.target.value) || 0 })}
-                        className="text-center"
-                      />
-                    ) : (
-                      app.users_logging_in_via_sso || 0
-                    )}
-                  </p>
-                  <p className="text-sm text-slate-500">SSO Logins</p>
-                </div>
+                {[
+                  { label: 'Engaged Users', field: 'engaged_users', color: 'lime' },
+                  { label: 'Provisioned Users', field: 'provisioned_users', color: 'slate' },
+                  { label: 'SSO Access', field: 'users_with_sso_access', color: 'slate' },
+                  { label: 'SSO Logins', field: 'users_logging_in_via_sso', color: 'slate' },
+                ].map(({ label, field, color }) => (
+                  <div key={field} className={`text-center p-4 bg-${color}-50 rounded-lg`}>
+                    <Users className={`w-8 h-8 text-${color}-600 mx-auto mb-2`} />
+                    <p className="text-3xl font-heading font-bold text-zinc-900">
+                      {editing ? (
+                        <Input
+                          type="number"
+                          value={editForm[field] || 0}
+                          onChange={(e) => setEditForm({ ...editForm, [field]: parseInt(e.target.value) || 0 })}
+                          className="text-center"
+                        />
+                      ) : (
+                        app[field] || 0
+                      )}
+                    </p>
+                    <p className="text-sm text-slate-500">{label}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -469,74 +584,29 @@ const ApplicationDetailPage = () => {
                   <DollarSign className="w-8 h-8 text-lime-600 mb-2" />
                   <p className="text-sm text-slate-500 mb-1">Contract Annual Spend</p>
                   {editing ? (
-                    <Input
-                      type="number"
-                      value={editForm.contract_annual_spend || 0}
-                      onChange={(e) => setEditForm({ ...editForm, contract_annual_spend: parseFloat(e.target.value) || 0 })}
-                    />
+                    <Input type="number" value={editForm.contract_annual_spend || 0} onChange={(e) => setEditForm({ ...editForm, contract_annual_spend: parseFloat(e.target.value) || 0 })} />
                   ) : (
-                    <p className="text-2xl font-heading font-bold text-zinc-900">
-                      {formatCurrency(app.contract_annual_spend)}
-                    </p>
+                    <p className="text-2xl font-heading font-bold text-zinc-900">{formatCurrency(app.contract_annual_spend)}</p>
                   )}
                 </div>
                 <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg">
                   <DollarSign className="w-8 h-8 text-slate-600 mb-2" />
                   <p className="text-sm text-slate-500 mb-1">Fiscal YTD Expense</p>
                   {editing ? (
-                    <Input
-                      type="number"
-                      value={editForm.fiscal_ytd_expense_total || 0}
-                      onChange={(e) => setEditForm({ ...editForm, fiscal_ytd_expense_total: parseFloat(e.target.value) || 0 })}
-                    />
+                    <Input type="number" value={editForm.fiscal_ytd_expense_total || 0} onChange={(e) => setEditForm({ ...editForm, fiscal_ytd_expense_total: parseFloat(e.target.value) || 0 })} />
                   ) : (
-                    <p className="text-2xl font-heading font-bold text-zinc-900">
-                      {formatCurrency(app.fiscal_ytd_expense_total)}
-                    </p>
+                    <p className="text-2xl font-heading font-bold text-zinc-900">{formatCurrency(app.fiscal_ytd_expense_total)}</p>
                   )}
                 </div>
                 <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg">
                   <DollarSign className="w-8 h-8 text-slate-600 mb-2" />
-                  <p className="text-sm text-slate-500 mb-1">Prev Fiscal Year Expense</p>
+                  <p className="text-sm text-slate-500 mb-1">Prev Fiscal Year</p>
                   {editing ? (
-                    <Input
-                      type="number"
-                      value={editForm.prev_fiscal_year_expense_total || 0}
-                      onChange={(e) => setEditForm({ ...editForm, prev_fiscal_year_expense_total: parseFloat(e.target.value) || 0 })}
-                    />
+                    <Input type="number" value={editForm.prev_fiscal_year_expense_total || 0} onChange={(e) => setEditForm({ ...editForm, prev_fiscal_year_expense_total: parseFloat(e.target.value) || 0 })} />
                   ) : (
-                    <p className="text-2xl font-heading font-bold text-zinc-900">
-                      {formatCurrency(app.prev_fiscal_year_expense_total)}
-                    </p>
+                    <p className="text-2xl font-heading font-bold text-zinc-900">{formatCurrency(app.prev_fiscal_year_expense_total)}</p>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Data Tab */}
-        <TabsContent value="data">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Data Sources</CardTitle>
-              <CardDescription>Connected data systems and integrations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <Label className="text-slate-500">Data Sources</Label>
-                {editing ? (
-                  <Textarea
-                    value={editForm.data_sources || ''}
-                    onChange={(e) => setEditForm({ ...editForm, data_sources: e.target.value })}
-                    className="mt-1"
-                    rows={4}
-                  />
-                ) : (
-                  <p className="text-zinc-900 mt-2 whitespace-pre-wrap">
-                    {app.data_sources || 'No data sources documented'}
-                  </p>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -556,8 +626,6 @@ const ApplicationDetailPage = () => {
                   { label: 'Data Steward', field: 'data_steward_name', icon: Database },
                   { label: 'IT Contact', field: 'it_contact', icon: User },
                   { label: 'Security Contact', field: 'security_contact', icon: User },
-                  { label: 'Legal Contact', field: 'legal_contact', icon: User },
-                  { label: 'Procurement Contact', field: 'procurement_contact', icon: User },
                   { label: 'Vendor Contact', field: 'vendor_contact', icon: User },
                   { label: 'General Contact', field: 'general_contact', icon: User },
                 ].map(({ label, field, icon: Icon }) => (
@@ -566,12 +634,7 @@ const ApplicationDetailPage = () => {
                     <div className="flex-1">
                       <Label className="text-slate-500 text-xs">{label}</Label>
                       {editing ? (
-                        <Input
-                          value={editForm[field] || ''}
-                          onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })}
-                          className="mt-1"
-                          placeholder={`Enter ${label.toLowerCase()}`}
-                        />
+                        <Input value={editForm[field] || ''} onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })} className="mt-1" placeholder={`Enter ${label.toLowerCase()}`} />
                       ) : (
                         <p className="text-zinc-900 text-sm mt-1">{app[field] || 'Not assigned'}</p>
                       )}
@@ -612,17 +675,11 @@ const ApplicationDetailPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-zinc-900">{req.request_type}</span>
-                          <Badge className={`text-xs ${getRequestStatusColor(req.status)}`}>
-                            {req.status}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {req.priority}
-                          </Badge>
+                          <Badge className={`text-xs ${getRequestStatusColor(req.status)}`}>{req.status}</Badge>
+                          <Badge variant="outline" className="text-xs capitalize">{req.priority}</Badge>
                         </div>
                         <p className="text-sm text-slate-600 mt-1 truncate">{req.message}</p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          To: {req.to_role} {req.to_name && `(${req.to_name})`}
-                        </p>
+                        <p className="text-xs text-slate-400 mt-1">To: {req.to_role} {req.to_name && `(${req.to_name})`}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-400" />
                     </div>
@@ -639,22 +696,15 @@ const ApplicationDetailPage = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Request Information</DialogTitle>
-            <DialogDescription>
-              Send a request to the appropriate stakeholder for {app.title}
-            </DialogDescription>
+            <DialogDescription>Send a request to the appropriate stakeholder for {app.title}</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Request Type</Label>
-                <Select 
-                  value={requestForm.request_type} 
-                  onValueChange={(v) => setRequestForm({ ...requestForm, request_type: v })}
-                >
-                  <SelectTrigger className="mt-1" data-testid="request-type-select">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={requestForm.request_type} onValueChange={(v) => setRequestForm({ ...requestForm, request_type: v })}>
+                  <SelectTrigger className="mt-1" data-testid="request-type-select"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Owner Info">Owner Info</SelectItem>
                     <SelectItem value="Data Sources">Data Sources</SelectItem>
@@ -667,13 +717,8 @@ const ApplicationDetailPage = () => {
               </div>
               <div>
                 <Label>Priority</Label>
-                <Select 
-                  value={requestForm.priority} 
-                  onValueChange={(v) => setRequestForm({ ...requestForm, priority: v })}
-                >
-                  <SelectTrigger className="mt-1" data-testid="request-priority-select">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={requestForm.priority} onValueChange={(v) => setRequestForm({ ...requestForm, priority: v })}>
+                  <SelectTrigger className="mt-1" data-testid="request-priority-select"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Low">Low</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
@@ -685,25 +730,11 @@ const ApplicationDetailPage = () => {
 
             <div>
               <Label>To Role</Label>
-              <Select 
-                value={requestForm.to_role} 
-                onValueChange={(v) => {
-                  const contactMap = {
-                    'Product Owner': app?.product_owner_name,
-                    'Data Steward': app?.data_steward_name,
-                    'IT Contact': app?.it_contact,
-                    'Security Contact': app?.security_contact
-                  };
-                  setRequestForm({ 
-                    ...requestForm, 
-                    to_role: v,
-                    to_name: contactMap[v] || ''
-                  });
-                }}
-              >
-                <SelectTrigger className="mt-1" data-testid="request-role-select">
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={requestForm.to_role} onValueChange={(v) => {
+                const contactMap = { 'Product Owner': app?.product_owner_name, 'Data Steward': app?.data_steward_name, 'IT Contact': app?.it_contact, 'Security Contact': app?.security_contact };
+                setRequestForm({ ...requestForm, to_role: v, to_name: contactMap[v] || '' });
+              }}>
+                <SelectTrigger className="mt-1" data-testid="request-role-select"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Product Owner">Product Owner</SelectItem>
                   <SelectItem value="Data Steward">Data Steward</SelectItem>
@@ -717,44 +748,22 @@ const ApplicationDetailPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Contact Name</Label>
-                <Input
-                  value={requestForm.to_name}
-                  onChange={(e) => setRequestForm({ ...requestForm, to_name: e.target.value })}
-                  placeholder="Name"
-                  className="mt-1"
-                  data-testid="request-contact-name"
-                />
+                <Input value={requestForm.to_name} onChange={(e) => setRequestForm({ ...requestForm, to_name: e.target.value })} placeholder="Name" className="mt-1" data-testid="request-contact-name" />
               </div>
               <div>
                 <Label>Email (optional)</Label>
-                <Input
-                  type="email"
-                  value={requestForm.to_email}
-                  onChange={(e) => setRequestForm({ ...requestForm, to_email: e.target.value })}
-                  placeholder="email@company.com"
-                  className="mt-1"
-                  data-testid="request-contact-email"
-                />
+                <Input type="email" value={requestForm.to_email} onChange={(e) => setRequestForm({ ...requestForm, to_email: e.target.value })} placeholder="email@company.com" className="mt-1" data-testid="request-contact-email" />
               </div>
             </div>
 
             <div>
               <Label>Message *</Label>
-              <Textarea
-                value={requestForm.message}
-                onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })}
-                placeholder="Describe what information you need..."
-                className="mt-1"
-                rows={4}
-                data-testid="request-message"
-              />
+              <Textarea value={requestForm.message} onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })} placeholder="Describe what information you need..." className="mt-1" rows={4} data-testid="request-message" />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRequestModalOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setRequestModalOpen(false)}>Cancel</Button>
             <Button onClick={handleCreateRequest} className="bg-zinc-900 hover:bg-zinc-800" data-testid="submit-request-btn">
               <Send className="w-4 h-4 mr-2" />
               Create Request

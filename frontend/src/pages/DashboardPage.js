@@ -176,7 +176,7 @@ const DashboardPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-theme-primary">
             Executive Dashboard
           </h1>
           <p className="text-theme-muted mt-1">Systems inventory overview and analytics</p>
@@ -187,7 +187,7 @@ const DashboardPage = () => {
             size="sm" 
             onClick={fetchDashboardData} 
             data-testid="refresh-btn"
-            className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
+            className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-theme-primary"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -363,7 +363,7 @@ const DashboardPage = () => {
                 <item.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-2xl font-heading font-bold text-white">{item.value}</p>
+                <p className="text-2xl font-heading font-bold text-theme-primary">{item.value}</p>
                 <p className="text-xs text-theme-muted">{item.label}</p>
               </div>
             </div>
@@ -376,15 +376,15 @@ const DashboardPage = () => {
         {/* Spend by Category - Clickable */}
         <div className="glass-card p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-heading font-semibold text-white">Spend by Category</h3>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Spend by Category</h3>
             <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={spendByCategory} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
-                <YAxis dataKey="category" type="category" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} width={100} />
+                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+                <YAxis dataKey="category" type="category" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} width={100} />
                 <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
                 <Bar 
                   dataKey="total_spend" 
@@ -401,7 +401,7 @@ const DashboardPage = () => {
         {/* Deployment Pie Chart - Clickable */}
         <div className="glass-card p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-heading font-semibold text-white">Deployment Distribution</h3>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Deployment Distribution</h3>
             <p className="text-xs text-theme-muted mt-1">Click a segment to filter</p>
           </div>
           <div className="h-[300px]">
@@ -416,7 +416,7 @@ const DashboardPage = () => {
                   paddingAngle={3}
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                  labelLine={{ stroke: 'var(--text-faint)' }}
                   cursor="pointer"
                   onClick={(data) => handleDeploymentClick(data.name)}
                 >
@@ -433,7 +433,7 @@ const DashboardPage = () => {
         {/* Apps by Category - Clickable */}
         <div className="glass-card p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-heading font-semibold text-white">Apps by Category</h3>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Apps by Category</h3>
             <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
           </div>
           <div className="h-[300px]">
@@ -442,11 +442,11 @@ const DashboardPage = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis 
                   dataKey="category" 
-                  tick={{ fontSize: 10, angle: -45, textAnchor: 'end', fill: 'rgba(255,255,255,0.5)' }} 
+                  tick={{ fontSize: 10, angle: -45, textAnchor: 'end', fill: 'var(--text-muted)' }} 
                   interval={0}
                   height={80}
                 />
-                <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar 
                   dataKey="count" 

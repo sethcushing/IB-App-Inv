@@ -215,7 +215,7 @@ const InventoryPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-theme-primary">
             Application Inventory
           </h1>
           <p className="text-theme-muted mt-1">
@@ -228,7 +228,7 @@ const InventoryPage = () => {
             size="sm" 
             onClick={fetchApplications} 
             data-testid="refresh-inventory"
-            className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
+            className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-theme-primary"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -473,7 +473,7 @@ const InventoryPage = () => {
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
           <DialogHeader>
-            <DialogTitle className="text-white">Add New Application</DialogTitle>
+            <DialogTitle className="text-theme-primary">Add New Application</DialogTitle>
             <DialogDescription className="text-theme-muted">
               Enter the details for the new application. Required fields are marked with *.
             </DialogDescription>
@@ -506,7 +506,7 @@ const InventoryPage = () => {
               <div>
                 <Label htmlFor="app-status" className="text-theme-secondary">Status</Label>
                 <Select value={newAppForm.status} onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}>
-                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-white" data-testid="new-app-status"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary" data-testid="new-app-status"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
                     <SelectItem value="under_review">Under Review</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
@@ -532,7 +532,7 @@ const InventoryPage = () => {
               <div>
                 <Label htmlFor="app-deployment" className="text-theme-secondary">Deployment Type</Label>
                 <Select value={newAppForm.deployment_type} onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}>
-                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-white" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
                     <SelectItem value="Cloud">Cloud</SelectItem>
                     <SelectItem value="On-Prem">On-Prem</SelectItem>

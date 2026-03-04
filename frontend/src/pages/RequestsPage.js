@@ -184,7 +184,7 @@ const RequestsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-theme-primary">
             Requests Center
           </h1>
           <p className="text-theme-muted mt-1">
@@ -196,7 +196,7 @@ const RequestsPage = () => {
           size="sm" 
           onClick={fetchRequests} 
           data-testid="refresh-requests"
-          className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
+          className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-theme-primary"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
@@ -255,7 +255,7 @@ const RequestsPage = () => {
         </div>
       ) : requests.length === 0 ? (
         <div className="glass-card p-16 flex flex-col items-center justify-center">
-          <Inbox className="w-12 h-12 text-white/20 mb-4" />
+          <Inbox className="w-12 h-12 text-theme-faint mb-4" />
           <p className="text-theme-muted text-lg">No requests found</p>
           <p className="text-sm text-theme-faint mt-1">
             Create requests from application detail pages
@@ -271,7 +271,7 @@ const RequestsPage = () => {
               <div key={status}>
                 <div className="flex items-center gap-2 mb-3">
                   {getStatusIcon(status)}
-                  <h3 className="font-medium text-white">{status}</h3>
+                  <h3 className="font-medium text-theme-primary">{status}</h3>
                   <Badge className="text-xs bg-[var(--glass-bg)] text-theme-muted">{statusRequests.length}</Badge>
                 </div>
                 
@@ -286,7 +286,7 @@ const RequestsPage = () => {
                       <div className="flex items-start gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-medium text-white">{req.request_type}</span>
+                            <span className="font-medium text-theme-primary">{req.request_type}</span>
                             <Badge className={`text-xs ${getStatusBadgeClass(req.status)}`}>
                               {req.status}
                             </Badge>
@@ -323,7 +323,7 @@ const RequestsPage = () => {
           {selectedRequest && (
             <>
               <SheetHeader>
-                <SheetTitle className="text-white">{selectedRequest.request_type}</SheetTitle>
+                <SheetTitle className="text-theme-primary">{selectedRequest.request_type}</SheetTitle>
                 <SheetDescription className="text-theme-muted">
                   Request for {selectedRequest.app_title}
                 </SheetDescription>
@@ -338,7 +338,7 @@ const RequestsPage = () => {
                       value={selectedRequest.status} 
                       onValueChange={(v) => handleStatusChange(selectedRequest.request_id, v)}
                     >
-                      <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-white" data-testid="detail-status-select">
+                      <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary" data-testid="detail-status-select">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">

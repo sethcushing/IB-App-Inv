@@ -136,7 +136,7 @@ const ImportPage = () => {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
+        <h1 className="text-2xl sm:text-3xl font-heading font-bold text-theme-primary">
           Import Data
         </h1>
         <p className="text-theme-muted mt-1">
@@ -149,7 +149,7 @@ const ImportPage = () => {
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-green-400" />
-            <h3 className="text-lg font-heading font-semibold text-white">Upload File</h3>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Upload File</h3>
           </div>
           <p className="text-xs text-theme-muted mt-1">
             Supported formats: Excel (.xlsx, .xls) and CSV (.csv)
@@ -180,7 +180,7 @@ const ImportPage = () => {
               <div className="flex items-center justify-center gap-4">
                 <FileSpreadsheet className="w-12 h-12 text-green-400" />
                 <div className="text-left">
-                  <p className="font-medium text-white">{selectedFile.name}</p>
+                  <p className="font-medium text-theme-primary">{selectedFile.name}</p>
                   <p className="text-sm text-theme-muted">{formatFileSize(selectedFile.size)}</p>
                 </div>
                 <Button
@@ -195,7 +195,7 @@ const ImportPage = () => {
               </div>
             ) : (
               <>
-                <FileSpreadsheet className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                <FileSpreadsheet className="w-12 h-12 text-theme-faint mx-auto mb-4" />
                 <p className="text-theme-secondary mb-2">
                   Drag and drop your file here, or click to browse
                 </p>
@@ -230,7 +230,7 @@ const ImportPage = () => {
             <Button 
               variant="outline" 
               onClick={handleDownloadTemplate} 
-              className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
+              className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-theme-primary"
               data-testid="download-template-btn"
             >
               <Download className="w-4 h-4 mr-2" />
@@ -276,7 +276,7 @@ const ImportPage = () => {
                   </div>
                   <div className="p-3 rounded-xl bg-[var(--glass-highlight)] border border-[var(--glass-border)]">
                     <p className="text-theme-muted">Total Rows</p>
-                    <p className="text-2xl font-heading font-bold text-white">
+                    <p className="text-2xl font-heading font-bold text-theme-primary">
                       {importResult.total_rows}
                     </p>
                   </div>
@@ -308,7 +308,7 @@ const ImportPage = () => {
         <div className="p-6 border-b border-white/5">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-theme-muted" />
-            <h3 className="text-lg font-heading font-semibold text-white">Expected Columns</h3>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Expected Columns</h3>
           </div>
           <p className="text-xs text-theme-muted mt-1">
             The import will auto-detect and map these columns from your file
@@ -365,7 +365,7 @@ const ImportPage = () => {
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <AlertDialogContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Clear All Data?</AlertDialogTitle>
+            <AlertDialogTitle className="text-theme-primary">Clear All Data?</AlertDialogTitle>
             <AlertDialogDescription className="text-theme-muted">
               This will permanently delete all applications and requests from the database.
               This action cannot be undone.
@@ -380,7 +380,7 @@ const ImportPage = () => {
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleClearData}
-              className="bg-red-500 hover:bg-red-400 text-white"
+              className="bg-red-500 hover:bg-red-400 text-theme-primary"
               data-testid="confirm-clear-btn"
             >
               Clear All Data

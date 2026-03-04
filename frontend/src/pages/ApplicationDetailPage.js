@@ -679,11 +679,23 @@ const ApplicationDetailPage = () => {
           </div>
         </TabsContent>
 
-        {/* Financials Tab */}
-        <TabsContent value="financials">
+        {/* Financials Tab - 5 Year View */}
+        <TabsContent value="financials" className="space-y-6">
+          {/* Info Banner */}
+          <div className="glass-card p-4 border-l-4 border-l-green-500 bg-gradient-to-r from-green-500/10 to-transparent">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-theme-secondary">
+                5-year financial trend data shown below is generated for demonstration purposes. 
+                Actual historical data would come from your data source.
+              </p>
+            </div>
+          </div>
+
+          {/* Current Year Summary Cards */}
           <div className="glass-card p-6">
-            <h3 className="text-lg font-heading font-semibold text-theme-primary mb-2">Financial Information</h3>
-            <p className="text-xs text-theme-muted mb-6">Spend and expense tracking</p>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary mb-2">Current Financial Summary</h3>
+            <p className="text-xs text-theme-muted mb-6">Current fiscal year spend and expense tracking</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="p-6 rounded-xl bg-green-500/10 border border-green-500/20">
                 <DollarSign className="w-8 h-8 text-green-400 mb-2" />
@@ -727,6 +739,116 @@ const ApplicationDetailPage = () => {
                   <p className="text-2xl font-heading font-bold text-theme-primary">{formatCurrency(app.prev_fiscal_year_expense_total)}</p>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* YoY Change Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-theme-muted">Spend YoY Change</p>
+                  <p className="text-3xl font-heading font-bold text-theme-primary mt-1">
+                    {yoyChange.spend > 0 ? '+' : ''}{yoyChange.spend}%
+                  </p>
+                </div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${parseFloat(yoyChange.spend) > 0 ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
+                  {parseFloat(yoyChange.spend) > 0 ? (
+                    <TrendingUp className="w-6 h-6 text-red-400" />
+                  ) : (
+                    <TrendingDown className="w-6 h-6 text-green-400" />
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-theme-faint mt-2">vs. previous year</p>
+            </div>
+
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-theme-muted">5-Year Total Spend</p>
+                  <p className="text-3xl font-heading font-bold text-theme-primary mt-1">
+                    {formatCurrencyShort(yoyData.reduce((sum, d) => sum + d.spend, 0))}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500/20">
+                  <DollarSign className="w-6 h-6 text-green-400" />
+                </div>
+              </div>
+              <p className="text-xs text-theme-faint mt-2">cumulative over 5 years</p>
+            </div>
+          </div>
+
+          {/* 5-Year Spend Trend Chart */}
+          <div className="glass-card p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-heading font-semibold text-theme-primary">5-Year Spend Trend</h3>
+              <p className="text-xs text-theme-muted mt-1">Annual contract spend over time</p>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={yoyData} margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: chartColors.tick }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyShort(v)} tick={{ fontSize: 12, fill: chartColors.tick }} />
+                  <Tooltip content={<CustomTooltip formatter={(v) => formatCurrency(v)} />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="spend" 
+                    stroke="#22c55e" 
+                    strokeWidth={3}
+                    dot={{ fill: '#22c55e', strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Annual Spend"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 5-Year Data Table */}
+          <div className="glass-card overflow-hidden">
+            <div className="p-4 border-b border-[var(--glass-border)]">
+              <h3 className="text-lg font-heading font-semibold text-theme-primary">5-Year Financial History</h3>
+              <p className="text-xs text-theme-muted mt-1">Year-by-year breakdown of financial metrics</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full" data-testid="financial-history-table">
+                <thead>
+                  <tr className="table-header border-b-2 border-[var(--glass-border)]">
+                    <th className="p-4 text-left">Year</th>
+                    <th className="p-4 text-right">Annual Spend</th>
+                    <th className="p-4 text-right">YoY Change</th>
+                    <th className="p-4 text-right">Engaged Users</th>
+                    <th className="p-4 text-right">Cost Per User</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {yoyData.map((row, idx) => {
+                    const prevSpend = idx > 0 ? yoyData[idx - 1].spend : row.spend;
+                    const yoyChangePercent = idx > 0 ? ((row.spend - prevSpend) / prevSpend * 100).toFixed(1) : '-';
+                    const costPerUser = row.users > 0 ? row.spend / row.users : 0;
+                    
+                    return (
+                      <tr key={row.year} className="table-row-bordered hover:bg-[var(--glass-highlight)] transition-colors">
+                        <td className="p-4 font-medium text-theme-primary">{row.year}</td>
+                        <td className="p-4 text-right font-mono text-theme-secondary">{formatCurrency(row.spend)}</td>
+                        <td className="p-4 text-right">
+                          {idx > 0 ? (
+                            <span className={`font-mono ${parseFloat(yoyChangePercent) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              {parseFloat(yoyChangePercent) > 0 ? '+' : ''}{yoyChangePercent}%
+                            </span>
+                          ) : (
+                            <span className="text-theme-faint">-</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right font-mono text-theme-secondary">{row.users}</td>
+                        <td className="p-4 text-right font-mono text-theme-secondary">{formatCurrency(costPerUser)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </TabsContent>

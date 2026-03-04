@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import { 
   LayoutDashboard, 
   List, 
@@ -8,7 +9,9 @@ import {
   Menu, 
   X,
   ChevronRight,
-  Sparkles
+  Sun,
+  Moon,
+  Box
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +24,7 @@ const navItems = [
 const Layout = ({ children }) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const getBreadcrumb = () => {
     const path = location.pathname;
@@ -36,7 +40,7 @@ const Layout = ({ children }) => {
     <div className="min-h-screen relative">
       {/* Background gradient orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-lime-500/10 rounded-full blur-[100px]" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-green-500/10 rounded-full blur-[100px]" />
         <div className="absolute top-1/2 -right-40 w-80 h-80 bg-blue-500/5 rounded-full blur-[100px]" />
         <div className="absolute -bottom-40 left-1/3 w-72 h-72 bg-purple-500/5 rounded-full blur-[100px]" />
       </div>
@@ -58,21 +62,21 @@ const Layout = ({ children }) => {
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5">
-            <div className="w-10 h-10 bg-gradient-to-br from-lime-400 to-lime-600 rounded-xl flex items-center justify-center shadow-lg shadow-lime-500/20">
-              <Sparkles className="w-5 h-5 text-zinc-900" />
+          <div className="flex items-center gap-3 px-6 py-5 border-b border-[var(--glass-border)]">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
+              <Box className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-heading font-bold text-white text-lg leading-tight tracking-tight">
-                Systems
+              <h1 className="font-heading font-bold text-theme-primary text-lg leading-tight tracking-tight">
+                BIA
               </h1>
-              <p className="text-xs text-white/40 -mt-0.5">Inventory Dashboard</p>
+              <p className="text-xs text-theme-muted -mt-0.5">Blox App Inventory</p>
             </div>
             <button 
-              className="lg:hidden ml-auto p-2 hover:bg-white/5 rounded-lg transition-colors"
+              className="lg:hidden ml-auto p-2 hover:bg-[var(--glass-highlight)] rounded-lg transition-colors"
               onClick={() => setSidebarOpen(false)}
             >
-              <X className="w-5 h-5 text-white/50" />
+              <X className="w-5 h-5 text-theme-muted" />
             </button>
           </div>
 
@@ -92,30 +96,46 @@ const Layout = ({ children }) => {
                     flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
                     transition-all duration-200 group relative
                     ${isActive 
-                      ? 'bg-lime-500/15 text-lime-400' 
-                      : 'text-white/60 hover:bg-white/5 hover:text-white/90'
+                      ? 'bg-green-500/15 text-green-500' 
+                      : 'text-theme-secondary hover:bg-[var(--glass-highlight)] hover:text-theme-primary'
                     }
                   `}
                   data-testid={`nav-${item.label.toLowerCase()}`}
                 >
                   {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-lime-400 rounded-r-full" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-green-500 rounded-r-full" />
                   )}
-                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-lime-400' : 'group-hover:text-lime-400/70'}`} />
+                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-green-500' : 'group-hover:text-green-500/70'}`} />
                   {item.label}
                   {isActive && (
-                    <ChevronRight className="w-4 h-4 ml-auto text-lime-400/50" />
+                    <ChevronRight className="w-4 h-4 ml-auto text-green-500/50" />
                   )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-white/5">
-            <div className="px-4 py-3 rounded-xl bg-white/5">
-              <p className="text-xs text-white/30 text-center">Systems Inventory v1.0</p>
-              <p className="text-[10px] text-white/20 text-center mt-1">Glassmorphic Edition</p>
+          {/* Theme Toggle & Footer */}
+          <div className="p-4 border-t border-[var(--glass-border)]">
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--glass-highlight)] hover:bg-[var(--glass-bg)] transition-colors text-theme-secondary hover:text-theme-primary"
+              data-testid="theme-toggle"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-4 h-4" />
+                  <span className="text-sm">Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-4 h-4" />
+                  <span className="text-sm">Dark Mode</span>
+                </>
+              )}
+            </button>
+            <div className="mt-3 px-4 py-2 text-center">
+              <p className="text-[10px] text-theme-faint">BIA v1.0</p>
             </div>
           </div>
         </div>
@@ -127,23 +147,23 @@ const Layout = ({ children }) => {
         <header className="sticky top-0 z-30 header-blur">
           <div className="flex items-center gap-4 px-4 sm:px-6 lg:px-8 h-16">
             <button 
-              className="lg:hidden p-2 -ml-2 hover:bg-white/5 rounded-lg transition-colors"
+              className="lg:hidden p-2 -ml-2 hover:bg-[var(--glass-highlight)] rounded-lg transition-colors"
               onClick={() => setSidebarOpen(true)}
               data-testid="mobile-menu-btn"
             >
-              <Menu className="w-5 h-5 text-white/60" />
+              <Menu className="w-5 h-5 text-theme-muted" />
             </button>
             
             <div className="flex items-center gap-2 text-sm">
-              <span className="hidden sm:inline text-white/40">Home</span>
-              <ChevronRight className="w-4 h-4 hidden sm:block text-white/20" />
-              <span className="font-medium text-white/90">{getBreadcrumb()}</span>
+              <span className="hidden sm:inline text-theme-muted">BIA</span>
+              <ChevronRight className="w-4 h-4 hidden sm:block text-theme-faint" />
+              <span className="font-medium text-theme-primary">{getBreadcrumb()}</span>
             </div>
 
-            {/* Decorative element */}
+            {/* Live indicator */}
             <div className="ml-auto flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-              <span className="text-xs text-white/40 hidden sm:inline">Live</span>
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs text-theme-muted hidden sm:inline">Live</span>
             </div>
           </div>
         </header>

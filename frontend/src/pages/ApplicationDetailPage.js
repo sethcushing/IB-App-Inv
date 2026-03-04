@@ -28,6 +28,13 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+import { useTheme } from '../context/ThemeContext';
+
+// Theme-aware chart colors
+const getChartColors = (theme) => ({
+  grid: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+  tick: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(15,23,42,0.6)',
+});
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';

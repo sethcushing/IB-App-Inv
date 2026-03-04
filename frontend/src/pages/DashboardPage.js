@@ -42,7 +42,7 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
   if (active && payload && payload.length) {
     return (
       <div className="glass-card px-3 py-2 text-sm">
-        <p className="text-white/90 font-medium">{label}</p>
+        <p className="text-theme-primary font-medium">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} style={{ color: entry.color }} className="text-sm">
             {formatter ? formatter(entry.value) : entry.value}
@@ -163,8 +163,8 @@ const DashboardPage = () => {
   if (loading && !kpis) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-white/50 flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+        <div className="text-theme-muted flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
           Loading dashboard...
         </div>
       </div>
@@ -179,7 +179,7 @@ const DashboardPage = () => {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
             Executive Dashboard
           </h1>
-          <p className="text-white/50 mt-1">Systems inventory overview and analytics</p>
+          <p className="text-theme-muted mt-1">Systems inventory overview and analytics</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -187,7 +187,7 @@ const DashboardPage = () => {
             size="sm" 
             onClick={fetchDashboardData} 
             data-testid="refresh-btn"
-            className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+            className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -197,7 +197,7 @@ const DashboardPage = () => {
               size="sm" 
               onClick={seedData} 
               data-testid="seed-btn"
-              className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+              className="bg-green-500 hover:bg-green-400 text-zinc-900 font-medium"
             >
               Generate Sample Data
             </Button>
@@ -209,10 +209,10 @@ const DashboardPage = () => {
       <div className="glass-card p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme-faint" />
             <Input
               placeholder="Search apps or vendors..."
-              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-lime-500/50"
+              className="pl-9 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint focus:border-green-500/50"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               data-testid="search-filter"
@@ -220,10 +220,10 @@ const DashboardPage = () => {
           </div>
           
           <Select value={filters.functional_category} onValueChange={(v) => setFilters({ ...filters, functional_category: v === 'all' ? '' : v })}>
-            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/70" data-testid="category-filter">
+            <SelectTrigger className="w-[180px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="category-filter">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Categories</SelectItem>
               {filterOptions.categories?.map(cat => (
                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -232,10 +232,10 @@ const DashboardPage = () => {
           </Select>
 
           <Select value={filters.deployment_type} onValueChange={(v) => setFilters({ ...filters, deployment_type: v === 'all' ? '' : v })}>
-            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="deployment-filter">
+            <SelectTrigger className="w-[150px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="deployment-filter">
               <SelectValue placeholder="Deployment" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Types</SelectItem>
               {filterOptions.deployment_types?.map(dt => (
                 <SelectItem key={dt} value={dt}>{dt}</SelectItem>
@@ -244,10 +244,10 @@ const DashboardPage = () => {
           </Select>
 
           <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v === 'all' ? '' : v })}>
-            <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white/70" data-testid="status-filter">
+            <SelectTrigger className="w-[140px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="status-filter">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Status</SelectItem>
               {filterOptions.statuses?.map(s => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -260,7 +260,7 @@ const DashboardPage = () => {
             size="sm" 
             onClick={clearFilters} 
             data-testid="clear-filters"
-            className="text-white/50 hover:text-white hover:bg-white/5"
+            className="text-theme-muted hover:text-theme-primary hover:bg-[var(--glass-highlight)]"
           >
             <Filter className="w-4 h-4 mr-1" />
             Clear
@@ -270,10 +270,10 @@ const DashboardPage = () => {
 
       {/* Executive Summary */}
       {executiveSummary && (
-        <div className="glass-card p-4 border-l-4 border-l-lime-500 bg-gradient-to-r from-lime-500/10 to-transparent">
+        <div className="glass-card p-4 border-l-4 border-l-green-500 bg-gradient-to-r from-green-500/10 to-transparent">
           <div className="flex items-start gap-3">
-            <TrendingUp className="w-5 h-5 text-lime-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-white/80 leading-relaxed" data-testid="executive-summary">
+            <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-theme-secondary leading-relaxed" data-testid="executive-summary">
               {executiveSummary.summary}
             </p>
           </div>
@@ -285,13 +285,13 @@ const DashboardPage = () => {
         <div className="kpi-card" data-testid="kpi-total-apps">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-white/50">Total Applications</p>
-              <p className="text-3xl font-heading font-bold text-white mt-1">
+              <p className="text-sm font-medium text-theme-muted">Total Applications</p>
+              <p className="text-3xl font-heading font-bold text-theme-primary mt-1">
                 {formatNumber(kpis?.total_apps || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white/50" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--glass-highlight)] flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-theme-muted" />
             </div>
           </div>
         </div>
@@ -299,13 +299,13 @@ const DashboardPage = () => {
         <div className="kpi-card-accent" data-testid="kpi-total-spend">
           <div className="flex items-start justify-between relative z-10">
             <div>
-              <p className="text-sm font-medium text-lime-400/70">Contract Annual Spend</p>
-              <p className="text-3xl font-heading font-bold text-white mt-1">
+              <p className="text-sm font-medium text-green-400/70">Contract Annual Spend</p>
+              <p className="text-3xl font-heading font-bold text-theme-primary mt-1">
                 {formatCurrency(kpis?.total_contract_spend || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-lime-500/20 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-lime-400" />
+            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-green-400" />
             </div>
           </div>
         </div>
@@ -313,13 +313,13 @@ const DashboardPage = () => {
         <div className="kpi-card" data-testid="kpi-ytd-expense">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-white/50">Fiscal YTD Expense</p>
-              <p className="text-3xl font-heading font-bold text-white mt-1">
+              <p className="text-sm font-medium text-theme-muted">Fiscal YTD Expense</p>
+              <p className="text-3xl font-heading font-bold text-theme-primary mt-1">
                 {formatCurrency(kpis?.total_ytd_expense || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white/50" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--glass-highlight)] flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-theme-muted" />
             </div>
           </div>
         </div>
@@ -327,13 +327,13 @@ const DashboardPage = () => {
         <div className="kpi-card" data-testid="kpi-engaged-users">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-white/50">Engaged Users</p>
-              <p className="text-3xl font-heading font-bold text-white mt-1">
+              <p className="text-sm font-medium text-theme-muted">Engaged Users</p>
+              <p className="text-3xl font-heading font-bold text-theme-primary mt-1">
                 {formatNumber(kpis?.total_engaged_users || 0)}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-              <Users className="w-5 h-5 text-white/50" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--glass-highlight)] flex items-center justify-center">
+              <Users className="w-5 h-5 text-theme-muted" />
             </div>
           </div>
         </div>
@@ -355,16 +355,16 @@ const DashboardPage = () => {
           >
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                item.color === 'lime' ? 'bg-lime-500/20 text-lime-400' :
+                item.color === 'lime' ? 'bg-green-500/20 text-green-400' :
                 item.color === 'blue' ? 'bg-blue-500/20 text-blue-400' :
                 item.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
-                'bg-white/5 text-white/40'
+                'bg-[var(--glass-highlight)] text-theme-muted'
               }`}>
                 <item.icon className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-2xl font-heading font-bold text-white">{item.value}</p>
-                <p className="text-xs text-white/40">{item.label}</p>
+                <p className="text-xs text-theme-muted">{item.label}</p>
               </div>
             </div>
           </div>
@@ -377,7 +377,7 @@ const DashboardPage = () => {
         <div className="glass-card p-6">
           <div className="mb-4">
             <h3 className="text-lg font-heading font-semibold text-white">Spend by Category</h3>
-            <p className="text-xs text-white/40 mt-1">Click a bar to view applications</p>
+            <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -402,7 +402,7 @@ const DashboardPage = () => {
         <div className="glass-card p-6">
           <div className="mb-4">
             <h3 className="text-lg font-heading font-semibold text-white">Deployment Distribution</h3>
-            <p className="text-xs text-white/40 mt-1">Click a segment to filter</p>
+            <p className="text-xs text-theme-muted mt-1">Click a segment to filter</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -434,7 +434,7 @@ const DashboardPage = () => {
         <div className="glass-card p-6">
           <div className="mb-4">
             <h3 className="text-lg font-heading font-semibold text-white">Apps by Category</h3>
-            <p className="text-xs text-white/40 mt-1">Click a bar to view applications</p>
+            <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -464,7 +464,7 @@ const DashboardPage = () => {
         <div className="glass-card p-6">
           <div className="mb-4">
             <h3 className="text-lg font-heading font-semibold text-white">Spend by Cost Center</h3>
-            <p className="text-xs text-white/40 mt-1">Click a bar to view applications</p>
+            <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -491,15 +491,15 @@ const DashboardPage = () => {
         <div className="p-6 border-b border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
+              <h3 className="text-lg font-heading font-semibold text-theme-primary flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-400" />
                 High Spend / Low Engagement
               </h3>
-              <p className="text-xs text-white/40 mt-1">Applications needing review</p>
+              <p className="text-xs text-theme-muted mt-1">Applications needing review</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-white/40 whitespace-nowrap">Spend &gt;</span>
+                <span className="text-theme-muted whitespace-nowrap">Spend &gt;</span>
                 <div className="w-32">
                   <Slider
                     value={spendThreshold}
@@ -507,13 +507,13 @@ const DashboardPage = () => {
                     min={10000}
                     max={500000}
                     step={10000}
-                    className="[&_[role=slider]]:bg-lime-400"
+                    className="[&_[role=slider]]:bg-green-400"
                   />
                 </div>
-                <span className="text-lime-400 font-medium">{formatCurrency(spendThreshold[0])}</span>
+                <span className="text-green-400 font-medium">{formatCurrency(spendThreshold[0])}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-white/40 whitespace-nowrap">Users &lt;</span>
+                <span className="text-theme-muted whitespace-nowrap">Users &lt;</span>
                 <div className="w-32">
                   <Slider
                     value={engagementThreshold}
@@ -521,17 +521,17 @@ const DashboardPage = () => {
                     min={10}
                     max={500}
                     step={10}
-                    className="[&_[role=slider]]:bg-lime-400"
+                    className="[&_[role=slider]]:bg-green-400"
                   />
                 </div>
-                <span className="text-lime-400 font-medium">{engagementThreshold[0]}</span>
+                <span className="text-green-400 font-medium">{engagementThreshold[0]}</span>
               </div>
             </div>
           </div>
         </div>
         
         {highSpendLowEngagement.length === 0 ? (
-          <p className="text-white/40 text-center py-8">No applications match the current thresholds</p>
+          <p className="text-theme-muted text-center py-8">No applications match the current thresholds</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -550,15 +550,15 @@ const DashboardPage = () => {
                 {highSpendLowEngagement.map((app) => (
                   <tr 
                     key={app.app_id} 
-                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    className="hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors"
                     onClick={() => navigate(`/applications/${app.app_id}`)}
                     data-testid={`hsle-row-${app.app_id}`}
                   >
                     <td className="p-4">
                       <p className="font-medium text-white">{app.title}</p>
                     </td>
-                    <td className="p-4 text-white/60">{app.vendor || '-'}</td>
-                    <td className="p-4 text-white/60">{app.functional_category || '-'}</td>
+                    <td className="p-4 text-theme-secondary">{app.vendor || '-'}</td>
+                    <td className="p-4 text-theme-secondary">{app.functional_category || '-'}</td>
                     <td className="p-4 text-right font-mono text-red-400 font-medium">
                       {formatCurrency(app.contract_annual_spend || 0)}
                     </td>
@@ -569,13 +569,13 @@ const DashboardPage = () => {
                       <Badge className={`text-xs ${
                         app.deployment_type === 'Cloud' ? 'badge-lime' : 
                         app.deployment_type === 'On-Prem' ? 'badge-blue' : 
-                        'bg-white/10 text-white/50'
+                        'bg-[var(--glass-bg)] text-theme-muted'
                       }`}>
                         {app.deployment_type}
                       </Badge>
                     </td>
                     <td className="p-4 text-center">
-                      <ChevronRight className="w-4 h-4 text-white/30 inline" />
+                      <ChevronRight className="w-4 h-4 text-theme-faint inline" />
                     </td>
                   </tr>
                 ))}

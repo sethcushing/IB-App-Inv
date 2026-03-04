@@ -195,7 +195,7 @@ const InventoryPage = () => {
       case 'approved': return 'badge-lime';
       case 'deprecated': case 'retired': return 'badge-red';
       case 'under_review': case 'in_review': return 'badge-amber';
-      default: return 'bg-white/10 text-white/50 border-white/10';
+      default: return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
     }
   };
 
@@ -204,7 +204,7 @@ const InventoryPage = () => {
       case 'Cloud': return 'badge-lime';
       case 'On-Prem': return 'badge-blue';
       case 'Hybrid': return 'bg-purple-500/15 border-purple-500/30 text-purple-400';
-      default: return 'bg-white/10 text-white/40 border-white/10';
+      default: return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
     }
   };
 
@@ -218,7 +218,7 @@ const InventoryPage = () => {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
             Application Inventory
           </h1>
-          <p className="text-white/50 mt-1">
+          <p className="text-theme-muted mt-1">
             {total} applications {activeUrlFilter ? 'matching filter' : 'in portfolio'}
           </p>
         </div>
@@ -228,7 +228,7 @@ const InventoryPage = () => {
             size="sm" 
             onClick={fetchApplications} 
             data-testid="refresh-inventory"
-            className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+            className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -237,7 +237,7 @@ const InventoryPage = () => {
             size="sm" 
             onClick={openAddModal} 
             data-testid="add-application-btn"
-            className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+            className="bg-green-500 hover:bg-green-400 text-zinc-900 font-medium"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Application
@@ -247,18 +247,18 @@ const InventoryPage = () => {
 
       {/* Active Filter Banner */}
       {activeUrlFilter && (
-        <div className="glass-card p-3 border-l-4 border-l-lime-500 bg-gradient-to-r from-lime-500/10 to-transparent flex items-center justify-between">
+        <div className="glass-card p-3 border-l-4 border-l-green-500 bg-gradient-to-r from-green-500/10 to-transparent flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-lime-400" />
-            <span className="text-sm text-white/80">
-              Filtered by: <strong className="text-lime-400">{activeUrlFilter}</strong>
+            <Filter className="w-4 h-4 text-green-400" />
+            <span className="text-sm text-theme-secondary">
+              Filtered by: <strong className="text-green-400">{activeUrlFilter}</strong>
             </span>
           </div>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={clearFilters} 
-            className="text-white/50 hover:text-white hover:bg-white/5"
+            className="text-theme-muted hover:text-theme-primary hover:bg-[var(--glass-highlight)]"
           >
             <X className="w-4 h-4 mr-1" />
             Clear
@@ -270,10 +270,10 @@ const InventoryPage = () => {
       <div className="glass-card p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme-faint" />
             <Input
               placeholder="Search apps or vendors..."
-              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-lime-500/50"
+              className="pl-9 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint focus:border-green-500/50"
               value={filters.search}
               onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setPage(0); }}
               data-testid="inventory-search"
@@ -281,10 +281,10 @@ const InventoryPage = () => {
           </div>
           
           <Select value={filters.functional_category} onValueChange={(v) => { setFilters({ ...filters, functional_category: v === 'all' ? '' : v }); setPage(0); }}>
-            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-category-filter">
+            <SelectTrigger className="w-[180px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="inventory-category-filter">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Categories</SelectItem>
               {filterOptions.categories?.map(cat => (
                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -293,10 +293,10 @@ const InventoryPage = () => {
           </Select>
 
           <Select value={filters.deployment_type} onValueChange={(v) => { setFilters({ ...filters, deployment_type: v === 'all' ? '' : v }); setPage(0); }}>
-            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-deployment-filter">
+            <SelectTrigger className="w-[150px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="inventory-deployment-filter">
               <SelectValue placeholder="Deployment" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Types</SelectItem>
               {filterOptions.deployment_types?.map(dt => (
                 <SelectItem key={dt} value={dt}>{dt}</SelectItem>
@@ -305,10 +305,10 @@ const InventoryPage = () => {
           </Select>
 
           <Select value={filters.status} onValueChange={(v) => { setFilters({ ...filters, status: v === 'all' ? '' : v }); setPage(0); }}>
-            <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-status-filter">
+            <SelectTrigger className="w-[140px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="inventory-status-filter">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Status</SelectItem>
               {filterOptions.statuses?.map(s => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -317,10 +317,10 @@ const InventoryPage = () => {
           </Select>
 
           <Select value={filters.vendor} onValueChange={(v) => { setFilters({ ...filters, vendor: v === 'all' ? '' : v }); setPage(0); }}>
-            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-vendor-filter">
+            <SelectTrigger className="w-[150px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="inventory-vendor-filter">
               <SelectValue placeholder="Vendor" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Vendors</SelectItem>
               {filterOptions.vendors?.slice(0, 20).map(v => (
                 <SelectItem key={v} value={v}>{v}</SelectItem>
@@ -333,7 +333,7 @@ const InventoryPage = () => {
             size="sm" 
             onClick={clearFilters} 
             data-testid="clear-inventory-filters"
-            className="text-white/50 hover:text-white hover:bg-white/5"
+            className="text-theme-muted hover:text-theme-primary hover:bg-[var(--glass-highlight)]"
           >
             <Filter className="w-4 h-4 mr-1" />
             Clear
@@ -345,19 +345,19 @@ const InventoryPage = () => {
       <div className="glass-card overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-white/50 flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+            <div className="text-theme-muted flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
               Loading applications...
             </div>
           </div>
         ) : applications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
-            <p className="text-white/50">No applications found</p>
-            <p className="text-sm text-white/30 mt-1">Try adjusting your filters or import data</p>
+            <p className="text-theme-muted">No applications found</p>
+            <p className="text-sm text-theme-faint mt-1">Try adjusting your filters or import data</p>
             <Button 
               size="sm" 
               onClick={openAddModal} 
-              className="mt-4 bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+              className="mt-4 bg-green-500 hover:bg-green-400 text-zinc-900 font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add First Application
@@ -368,23 +368,23 @@ const InventoryPage = () => {
             <table className="w-full" data-testid="inventory-table">
               <thead>
                 <tr className="table-header border-b border-white/5">
-                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('title')}>
+                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('title')}>
                     Title <SortIcon field="title" />
                   </th>
-                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('status')}>
+                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('status')}>
                     Status <SortIcon field="status" />
                   </th>
-                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('functional_category')}>
+                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('functional_category')}>
                     Category <SortIcon field="functional_category" />
                   </th>
-                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('vendor')}>
+                  <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('vendor')}>
                     Vendor <SortIcon field="vendor" />
                   </th>
                   <th className="text-center p-4">Deployment</th>
-                  <th className="text-right p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('contract_annual_spend')}>
+                  <th className="text-right p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('contract_annual_spend')}>
                     Annual Spend <SortIcon field="contract_annual_spend" />
                   </th>
-                  <th className="text-right p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('engaged_users')}>
+                  <th className="text-right p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('engaged_users')}>
                     Engaged <SortIcon field="engaged_users" />
                   </th>
                   <th className="text-left p-4">Owner</th>
@@ -395,22 +395,22 @@ const InventoryPage = () => {
                 {applications.map((app) => (
                   <tr 
                     key={app.app_id}
-                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    className="hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors"
                     onClick={() => navigate(`/applications/${app.app_id}`)}
                     data-testid={`app-row-${app.app_id}`}
                   >
                     <td className="p-4">
-                      <p className="font-medium text-white max-w-[200px] truncate">{app.title}</p>
+                      <p className="font-medium text-theme-primary max-w-[200px] truncate">{app.title}</p>
                     </td>
                     <td className="p-4">
                       <Badge className={`capitalize text-xs ${getStatusBadgeClass(app.status)}`}>
                         {app.status || 'unknown'}
                       </Badge>
                     </td>
-                    <td className="p-4 text-white/60 text-sm max-w-[150px] truncate">
+                    <td className="p-4 text-theme-secondary text-sm max-w-[150px] truncate">
                       {app.functional_category || '-'}
                     </td>
-                    <td className="p-4 text-white/60 text-sm max-w-[120px] truncate">
+                    <td className="p-4 text-theme-secondary text-sm max-w-[120px] truncate">
                       {app.vendor || '-'}
                     </td>
                     <td className="p-4 text-center">
@@ -418,17 +418,17 @@ const InventoryPage = () => {
                         {app.deployment_type || 'Unknown'}
                       </Badge>
                     </td>
-                    <td className="p-4 text-right font-mono text-sm text-white/80">
+                    <td className="p-4 text-right font-mono text-sm text-theme-secondary">
                       {formatCurrency(app.contract_annual_spend)}
                     </td>
-                    <td className="p-4 text-right font-mono text-sm text-white/80">
+                    <td className="p-4 text-right font-mono text-sm text-theme-secondary">
                       {app.engaged_users || 0}
                     </td>
-                    <td className="p-4 text-white/60 text-sm max-w-[120px] truncate">
+                    <td className="p-4 text-theme-secondary text-sm max-w-[120px] truncate">
                       {app.product_owner_name || '-'}
                     </td>
                     <td className="p-4 text-center">
-                      <ChevronRight className="w-4 h-4 text-white/30 inline" />
+                      <ChevronRight className="w-4 h-4 text-theme-faint inline" />
                     </td>
                   </tr>
                 ))}
@@ -441,7 +441,7 @@ const InventoryPage = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-white/50">
+          <p className="text-sm text-theme-muted">
             Showing {page * limit + 1} - {Math.min((page + 1) * limit, total)} of {total}
           </p>
           <div className="flex gap-2">
@@ -451,7 +451,7 @@ const InventoryPage = () => {
               onClick={() => setPage(Math.max(0, page - 1))} 
               disabled={page === 0} 
               data-testid="prev-page"
-              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30"
+              className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] disabled:opacity-30"
             >
               Previous
             </Button>
@@ -461,7 +461,7 @@ const InventoryPage = () => {
               onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
               disabled={page >= totalPages - 1} 
               data-testid="next-page"
-              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30"
+              className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] disabled:opacity-30"
             >
               Next
             </Button>
@@ -471,10 +471,10 @@ const InventoryPage = () => {
 
       {/* Add Application Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-zinc-900 border-white/10">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
           <DialogHeader>
             <DialogTitle className="text-white">Add New Application</DialogTitle>
-            <DialogDescription className="text-white/50">
+            <DialogDescription className="text-theme-muted">
               Enter the details for the new application. Required fields are marked with *.
             </DialogDescription>
           </DialogHeader>
@@ -482,32 +482,32 @@ const InventoryPage = () => {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label htmlFor="app-title" className="text-white/70">Application Title *</Label>
+                <Label htmlFor="app-title" className="text-theme-secondary">Application Title *</Label>
                 <Input 
                   id="app-title" 
                   value={newAppForm.title} 
                   onChange={(e) => setNewAppForm({ ...newAppForm, title: e.target.value })} 
                   placeholder="e.g., Salesforce CRM" 
-                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                   data-testid="new-app-title" 
                 />
               </div>
               <div>
-                <Label htmlFor="app-vendor" className="text-white/70">Vendor</Label>
+                <Label htmlFor="app-vendor" className="text-theme-secondary">Vendor</Label>
                 <Input 
                   id="app-vendor" 
                   value={newAppForm.vendor} 
                   onChange={(e) => setNewAppForm({ ...newAppForm, vendor: e.target.value })} 
                   placeholder="e.g., Salesforce" 
-                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                   data-testid="new-app-vendor" 
                 />
               </div>
               <div>
-                <Label htmlFor="app-status" className="text-white/70">Status</Label>
+                <Label htmlFor="app-status" className="text-theme-secondary">Status</Label>
                 <Select value={newAppForm.status} onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}>
-                  <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="new-app-status"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-white/10">
+                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-white" data-testid="new-app-status"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
                     <SelectItem value="under_review">Under Review</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
                     <SelectItem value="deprecated">Deprecated</SelectItem>
@@ -519,21 +519,21 @@ const InventoryPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="app-category" className="text-white/70">Functional Category</Label>
+                <Label htmlFor="app-category" className="text-theme-secondary">Functional Category</Label>
                 <Input 
                   id="app-category" 
                   value={newAppForm.functional_category} 
                   onChange={(e) => setNewAppForm({ ...newAppForm, functional_category: e.target.value })} 
                   placeholder="e.g., Sales Engagement" 
-                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                   data-testid="new-app-category" 
                 />
               </div>
               <div>
-                <Label htmlFor="app-deployment" className="text-white/70">Deployment Type</Label>
+                <Label htmlFor="app-deployment" className="text-theme-secondary">Deployment Type</Label>
                 <Select value={newAppForm.deployment_type} onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}>
-                  <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-white/10">
+                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-white" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
                     <SelectItem value="Cloud">Cloud</SelectItem>
                     <SelectItem value="On-Prem">On-Prem</SelectItem>
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
@@ -544,93 +544,93 @@ const InventoryPage = () => {
             </div>
 
             <div>
-              <Label htmlFor="app-description" className="text-white/70">Description</Label>
+              <Label htmlFor="app-description" className="text-theme-secondary">Description</Label>
               <Textarea 
                 id="app-description" 
                 value={newAppForm.short_description} 
                 onChange={(e) => setNewAppForm({ ...newAppForm, short_description: e.target.value })} 
                 placeholder="Brief description..." 
-                className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                 rows={2} 
                 data-testid="new-app-description" 
               />
             </div>
 
-            <div className="border-t border-white/10 pt-4">
-              <h4 className="text-sm font-medium text-white/70 mb-3">Financial Information</h4>
+            <div className="border-t border-[var(--glass-border)] pt-4">
+              <h4 className="text-sm font-medium text-theme-secondary mb-3">Financial Information</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="app-spend" className="text-white/70">Contract Annual Spend ($)</Label>
+                  <Label htmlFor="app-spend" className="text-theme-secondary">Contract Annual Spend ($)</Label>
                   <Input 
                     id="app-spend" 
                     type="number" 
                     value={newAppForm.contract_annual_spend} 
                     onChange={(e) => setNewAppForm({ ...newAppForm, contract_annual_spend: e.target.value })} 
                     placeholder="0" 
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                     data-testid="new-app-spend" 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="app-ytd" className="text-white/70">Fiscal YTD Expense ($)</Label>
+                  <Label htmlFor="app-ytd" className="text-theme-secondary">Fiscal YTD Expense ($)</Label>
                   <Input 
                     id="app-ytd" 
                     type="number" 
                     value={newAppForm.fiscal_ytd_expense_total} 
                     onChange={(e) => setNewAppForm({ ...newAppForm, fiscal_ytd_expense_total: e.target.value })} 
                     placeholder="0" 
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                     data-testid="new-app-ytd" 
                   />
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-white/10 pt-4">
-              <h4 className="text-sm font-medium text-white/70 mb-3">Usage & Ownership</h4>
+            <div className="border-t border-[var(--glass-border)] pt-4">
+              <h4 className="text-sm font-medium text-theme-secondary mb-3">Usage & Ownership</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="app-engaged" className="text-white/70">Engaged Users</Label>
+                  <Label htmlFor="app-engaged" className="text-theme-secondary">Engaged Users</Label>
                   <Input 
                     id="app-engaged" 
                     type="number" 
                     value={newAppForm.engaged_users} 
                     onChange={(e) => setNewAppForm({ ...newAppForm, engaged_users: e.target.value })} 
                     placeholder="0" 
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                     data-testid="new-app-engaged" 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="app-cost-center" className="text-white/70">Cost Center</Label>
+                  <Label htmlFor="app-cost-center" className="text-theme-secondary">Cost Center</Label>
                   <Input 
                     id="app-cost-center" 
                     value={newAppForm.cost_center_primary} 
                     onChange={(e) => setNewAppForm({ ...newAppForm, cost_center_primary: e.target.value })} 
                     placeholder="e.g., 650-it executive" 
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                     data-testid="new-app-cost-center" 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="app-owner" className="text-white/70">Product Owner</Label>
+                  <Label htmlFor="app-owner" className="text-theme-secondary">Product Owner</Label>
                   <Input 
                     id="app-owner" 
                     value={newAppForm.product_owner_name} 
                     onChange={(e) => setNewAppForm({ ...newAppForm, product_owner_name: e.target.value })} 
                     placeholder="Owner name" 
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                     data-testid="new-app-owner" 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="app-it-contact" className="text-white/70">IT Contact</Label>
+                  <Label htmlFor="app-it-contact" className="text-theme-secondary">IT Contact</Label>
                   <Input 
                     id="app-it-contact" 
                     value={newAppForm.it_contact} 
                     onChange={(e) => setNewAppForm({ ...newAppForm, it_contact: e.target.value })} 
                     placeholder="IT contact name" 
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint" 
                     data-testid="new-app-it-contact" 
                   />
                 </div>
@@ -643,7 +643,7 @@ const InventoryPage = () => {
               variant="outline" 
               onClick={() => setAddModalOpen(false)} 
               disabled={submitting}
-              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+              className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)]"
             >
               Cancel
             </Button>
@@ -651,7 +651,7 @@ const InventoryPage = () => {
               onClick={handleAddApplication} 
               disabled={submitting || !newAppForm.title.trim()} 
               data-testid="submit-new-app"
-              className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+              className="bg-green-500 hover:bg-green-400 text-zinc-900 font-medium"
             >
               {submitting ? 'Creating...' : 'Create Application'}
             </Button>

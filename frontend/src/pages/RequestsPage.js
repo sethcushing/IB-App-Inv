@@ -132,11 +132,11 @@ const RequestsPage = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Completed': return <CheckCircle className="w-4 h-4 text-lime-400" />;
+      case 'Completed': return <CheckCircle className="w-4 h-4 text-green-400" />;
       case 'Sent': return <Send className="w-4 h-4 text-blue-400" />;
       case 'Awaiting Response': return <Clock className="w-4 h-4 text-amber-400" />;
-      case 'Draft': return <Mail className="w-4 h-4 text-white/40" />;
-      default: return <AlertCircle className="w-4 h-4 text-white/40" />;
+      case 'Draft': return <Mail className="w-4 h-4 text-theme-muted" />;
+      default: return <AlertCircle className="w-4 h-4 text-theme-muted" />;
     }
   };
 
@@ -145,9 +145,9 @@ const RequestsPage = () => {
       case 'Completed': return 'badge-lime';
       case 'Sent': return 'badge-blue';
       case 'Awaiting Response': return 'badge-amber';
-      case 'Draft': return 'bg-white/10 text-white/50 border-white/10';
-      case 'Closed': return 'bg-white/10 text-white/40 border-white/10';
-      default: return 'bg-white/10 text-white/50 border-white/10';
+      case 'Draft': return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
+      case 'Closed': return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
+      default: return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
     }
   };
 
@@ -155,8 +155,8 @@ const RequestsPage = () => {
     switch (priority) {
       case 'High': return 'badge-red';
       case 'Medium': return 'badge-amber';
-      case 'Low': return 'bg-white/10 text-white/50 border-white/10';
-      default: return 'bg-white/10 text-white/50 border-white/10';
+      case 'Low': return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
+      default: return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
     }
   };
 
@@ -187,7 +187,7 @@ const RequestsPage = () => {
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
             Requests Center
           </h1>
-          <p className="text-white/50 mt-1">
+          <p className="text-theme-muted mt-1">
             {requests.length} total requests
           </p>
         </div>
@@ -196,7 +196,7 @@ const RequestsPage = () => {
           size="sm" 
           onClick={fetchRequests} 
           data-testid="refresh-requests"
-          className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+          className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)] hover:text-white"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
@@ -207,10 +207,10 @@ const RequestsPage = () => {
       <div className="glass-card p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v === 'all' ? '' : v })}>
-            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/70" data-testid="requests-status-filter">
+            <SelectTrigger className="w-[180px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="requests-status-filter">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Draft">Draft</SelectItem>
               <SelectItem value="Sent">Sent</SelectItem>
@@ -221,10 +221,10 @@ const RequestsPage = () => {
           </Select>
 
           <Select value={filters.priority} onValueChange={(v) => setFilters({ ...filters, priority: v === 'all' ? '' : v })}>
-            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="requests-priority-filter">
+            <SelectTrigger className="w-[150px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="requests-priority-filter">
               <SelectValue placeholder="All Priorities" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/10">
+            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
               <SelectItem value="all">All Priorities</SelectItem>
               <SelectItem value="High">High</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
@@ -237,7 +237,7 @@ const RequestsPage = () => {
             size="sm" 
             onClick={clearFilters} 
             data-testid="clear-request-filters"
-            className="text-white/50 hover:text-white hover:bg-white/5"
+            className="text-theme-muted hover:text-theme-primary hover:bg-[var(--glass-highlight)]"
           >
             <Filter className="w-4 h-4 mr-1" />
             Clear
@@ -248,16 +248,16 @@ const RequestsPage = () => {
       {/* Requests List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="text-white/50 flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+          <div className="text-theme-muted flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
             Loading requests...
           </div>
         </div>
       ) : requests.length === 0 ? (
         <div className="glass-card p-16 flex flex-col items-center justify-center">
           <Inbox className="w-12 h-12 text-white/20 mb-4" />
-          <p className="text-white/50 text-lg">No requests found</p>
-          <p className="text-sm text-white/30 mt-1">
+          <p className="text-theme-muted text-lg">No requests found</p>
+          <p className="text-sm text-theme-faint mt-1">
             Create requests from application detail pages
           </p>
         </div>
@@ -272,7 +272,7 @@ const RequestsPage = () => {
                 <div className="flex items-center gap-2 mb-3">
                   {getStatusIcon(status)}
                   <h3 className="font-medium text-white">{status}</h3>
-                  <Badge className="text-xs bg-white/10 text-white/50">{statusRequests.length}</Badge>
+                  <Badge className="text-xs bg-[var(--glass-bg)] text-theme-muted">{statusRequests.length}</Badge>
                 </div>
                 
                 <div className="space-y-2">
@@ -295,18 +295,18 @@ const RequestsPage = () => {
                             </Badge>
                           </div>
                           <p 
-                            className="text-sm text-lime-400 hover:underline cursor-pointer mb-1"
+                            className="text-sm text-green-400 hover:underline cursor-pointer mb-1"
                             onClick={(e) => { e.stopPropagation(); navigate(`/applications/${req.app_id}`); }}
                           >
                             {req.app_title}
                           </p>
-                          <p className="text-sm text-white/50 truncate">{req.message}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-white/30">
+                          <p className="text-sm text-theme-muted truncate">{req.message}</p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-theme-faint">
                             <span>To: {req.to_role} {req.to_name && `(${req.to_name})`}</span>
                             <span>Created: {formatDate(req.created_at)}</span>
                           </div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-white/30 flex-shrink-0" />
+                        <ChevronRight className="w-5 h-5 text-theme-faint flex-shrink-0" />
                       </div>
                     </div>
                   ))}
@@ -319,12 +319,12 @@ const RequestsPage = () => {
 
       {/* Detail Sheet */}
       <Sheet open={detailOpen} onOpenChange={(open) => { if (!open) closeDetail(); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto bg-zinc-900 border-white/10">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
           {selectedRequest && (
             <>
               <SheetHeader>
                 <SheetTitle className="text-white">{selectedRequest.request_type}</SheetTitle>
-                <SheetDescription className="text-white/50">
+                <SheetDescription className="text-theme-muted">
                   Request for {selectedRequest.app_title}
                 </SheetDescription>
               </SheetHeader>
@@ -333,15 +333,15 @@ const RequestsPage = () => {
                 {/* Status & Priority */}
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <Label className="text-white/40 text-xs">Status</Label>
+                    <Label className="text-theme-muted text-xs">Status</Label>
                     <Select 
                       value={selectedRequest.status} 
                       onValueChange={(v) => handleStatusChange(selectedRequest.request_id, v)}
                     >
-                      <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="detail-status-select">
+                      <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-white" data-testid="detail-status-select">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-white/10">
+                      <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
                         <SelectItem value="Draft">Draft</SelectItem>
                         <SelectItem value="Sent">Sent</SelectItem>
                         <SelectItem value="Awaiting Response">Awaiting Response</SelectItem>
@@ -351,7 +351,7 @@ const RequestsPage = () => {
                     </Select>
                   </div>
                   <div className="flex-1">
-                    <Label className="text-white/40 text-xs">Priority</Label>
+                    <Label className="text-theme-muted text-xs">Priority</Label>
                     <Badge className={`mt-2 block w-fit ${getPriorityBadgeClass(selectedRequest.priority)}`}>
                       {selectedRequest.priority}
                     </Badge>
@@ -359,40 +359,40 @@ const RequestsPage = () => {
                 </div>
 
                 {/* Recipient */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <Label className="text-white/40 text-xs">Recipient</Label>
-                  <p className="font-medium text-white mt-1">{selectedRequest.to_role}</p>
+                <div className="p-4 rounded-xl bg-[var(--glass-highlight)] border border-[var(--glass-border)]">
+                  <Label className="text-theme-muted text-xs">Recipient</Label>
+                  <p className="font-medium text-theme-primary mt-1">{selectedRequest.to_role}</p>
                   {selectedRequest.to_name && (
-                    <p className="text-sm text-white/60">{selectedRequest.to_name}</p>
+                    <p className="text-sm text-theme-secondary">{selectedRequest.to_name}</p>
                   )}
                   {selectedRequest.to_email && (
-                    <p className="text-sm text-white/40">{selectedRequest.to_email}</p>
+                    <p className="text-sm text-theme-muted">{selectedRequest.to_email}</p>
                   )}
                 </div>
 
                 {/* Message */}
                 <div>
-                  <Label className="text-white/40 text-xs">Message</Label>
-                  <p className="mt-1 p-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/80 whitespace-pre-wrap">
+                  <Label className="text-theme-muted text-xs">Message</Label>
+                  <p className="mt-1 p-3 rounded-xl bg-[var(--glass-highlight)] border border-[var(--glass-border)] text-sm text-theme-secondary whitespace-pre-wrap">
                     {selectedRequest.message}
                   </p>
                 </div>
 
                 {/* Response Notes */}
                 <div>
-                  <Label className="text-white/40 text-xs">Response Notes</Label>
+                  <Label className="text-theme-muted text-xs">Response Notes</Label>
                   <Textarea
                     value={responseNotes}
                     onChange={(e) => setResponseNotes(e.target.value)}
                     placeholder="Add notes about the response..."
-                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary placeholder:text-theme-faint"
                     rows={4}
                     data-testid="response-notes-textarea"
                   />
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="mt-2 bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                    className="mt-2 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)]"
                     onClick={handleSaveNotes}
                     data-testid="save-notes-btn"
                   >
@@ -401,7 +401,7 @@ const RequestsPage = () => {
                 </div>
 
                 {/* Timestamps */}
-                <div className="text-xs text-white/30 space-y-1">
+                <div className="text-xs text-theme-faint space-y-1">
                   <p>Created: {formatDate(selectedRequest.created_at)}</p>
                   <p>Updated: {formatDate(selectedRequest.updated_at)}</p>
                   {selectedRequest.sent_at && <p>Sent: {formatDate(selectedRequest.sent_at)}</p>}
@@ -409,11 +409,11 @@ const RequestsPage = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t border-white/10">
+                <div className="flex gap-2 pt-4 border-t border-[var(--glass-border)]">
                   {selectedRequest.status === 'Draft' && (
                     <Button 
                       onClick={() => handleSendRequest(selectedRequest.request_id)}
-                      className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+                      className="bg-green-500 hover:bg-green-400 text-zinc-900 font-medium"
                       data-testid="send-request-btn"
                     >
                       <Send className="w-4 h-4 mr-2" />
@@ -423,7 +423,7 @@ const RequestsPage = () => {
                   <Button 
                     variant="outline"
                     onClick={() => navigate(`/applications/${selectedRequest.app_id}`)}
-                    className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                    className="bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary hover:bg-[var(--glass-bg)]"
                     data-testid="view-app-btn"
                   >
                     View Application

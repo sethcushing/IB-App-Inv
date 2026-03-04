@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Slider } from '../components/ui/slider';
+import { useTheme } from '../context/ThemeContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -37,6 +38,13 @@ const formatNumber = (value) => {
 };
 
 const CHART_COLORS = ['#22c55e', '#60a5fa', '#fbbf24', '#818cf8', '#14b8a6'];
+
+// Theme-aware chart colors
+const getChartColors = (theme) => ({
+  grid: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+  tick: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(15,23,42,0.6)',
+  labelLine: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+});
 
 const CustomTooltip = ({ active, payload, label, formatter }) => {
   if (active && payload && payload.length) {

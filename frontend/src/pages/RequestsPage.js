@@ -142,7 +142,7 @@ const RequestsPage = () => {
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'Completed': return 'badge-lime';
+      case 'Completed': return 'badge-green';
       case 'Sent': return 'badge-blue';
       case 'Awaiting Response': return 'badge-amber';
       case 'Draft': return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';

@@ -567,7 +567,7 @@ const DashboardPage = () => {
                     </td>
                     <td className="p-4 text-center">
                       <Badge className={`text-xs ${
-                        app.deployment_type === 'Cloud' ? 'badge-lime' : 
+                        app.deployment_type === 'Cloud' ? 'badge-green' : 
                         app.deployment_type === 'On-Prem' ? 'badge-blue' : 
                         'bg-[var(--glass-bg)] text-theme-muted'
                       }`}>

@@ -192,7 +192,7 @@ const InventoryPage = () => {
 
   const getStatusBadgeClass = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved': return 'badge-lime';
+      case 'approved': return 'badge-green';
       case 'deprecated': case 'retired': return 'badge-red';
       case 'under_review': case 'in_review': return 'badge-amber';
       default: return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';
@@ -201,7 +201,7 @@ const InventoryPage = () => {
 
   const getDeploymentBadgeClass = (type) => {
     switch (type) {
-      case 'Cloud': return 'badge-lime';
+      case 'Cloud': return 'badge-green';
       case 'On-Prem': return 'badge-blue';
       case 'Hybrid': return 'bg-purple-500/15 border-purple-500/30 text-purple-400';
       default: return 'bg-[var(--glass-bg)] text-theme-muted border-[var(--glass-border)]';

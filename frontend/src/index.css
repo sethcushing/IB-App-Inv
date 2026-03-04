@@ -265,6 +265,35 @@ code, .font-mono {
     background: var(--glass-highlight);
 }
 
+.table-row-bordered {
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.dark .table-row-bordered {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .table-row-bordered {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.table-row-bordered:hover {
+    background: var(--glass-highlight);
+}
+
+/* Stronger table dividers */
+.table-divider {
+    border-bottom-width: 1px;
+}
+
+.dark .table-divider {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.light .table-divider {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
 /* Sidebar glass effect */
 .sidebar-glass {
     background: var(--sidebar-bg);

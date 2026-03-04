@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import {
   Building2, DollarSign, Users, Cloud, Server, HelpCircle, TrendingUp,
-  AlertTriangle, Search, Filter, RefreshCw, ChevronRight, Activity, UserCheck
+  AlertTriangle, Search, Filter, RefreshCw, ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -42,7 +41,6 @@ const CHART_COLORS = ['#84CC16', '#18181B', '#64748B', '#E2E8F0', '#A3E635'];
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { user, getDashboardView, getAssignedCostCenters, isAdmin, isManager, isViewer } = useAuth();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState(null);
   const [spendByCategory, setSpendByCategory] = useState([]);
@@ -53,10 +51,6 @@ const DashboardPage = () => {
   const [executiveSummary, setExecutiveSummary] = useState(null);
   const [filterOptions, setFilterOptions] = useState({});
   
-  const dashboardView = getDashboardView();
-  const assignedCostCenters = getAssignedCostCenters();
-  
-  // Filters
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -67,25 +61,6 @@ const DashboardPage = () => {
   });
   const [spendThreshold, setSpendThreshold] = useState([50000]);
   const [engagementThreshold, setEngagementThreshold] = useState([100]);
-
-  // Get dashboard title based on role
-  const getDashboardTitle = () => {
-    if (isAdmin()) return 'Executive Dashboard';
-    if (isManager()) return 'IT Management Dashboard';
-    return 'Usage Analytics Dashboard';
-  };
-
-  const getDashboardSubtitle = () => {
-    if (isAdmin()) return 'Full portfolio overview and analytics';
-    if (isManager()) {
-      return assignedCostCenters.length > 0 
-        ? `Managing: ${assignedCostCenters.slice(0, 2).join(', ')}${assignedCostCenters.length > 2 ? ` +${assignedCostCenters.length - 2} more` : ''}`
-        : 'Multi-department management view';
-    }
-    return assignedCostCenters.length > 0 
-      ? `Cost Center: ${assignedCostCenters[0]}`
-      : 'Department usage metrics';
-  };
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -116,15 +91,11 @@ const DashboardPage = () => {
       setFilterOptions(filtersRes.data);
     } catch (error) {
       console.error('Dashboard fetch error:', error);
-      if (error.response?.status === 401) {
-        navigate('/login');
-      } else {
-        toast.error('Failed to load dashboard data');
-      }
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
-  }, [filters, spendThreshold, engagementThreshold, navigate]);
+  }, [filters, spendThreshold, engagementThreshold]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -151,6 +122,28 @@ const DashboardPage = () => {
     });
   };
 
+  // Navigate to inventory with filter
+  const handleCategoryClick = (category) => {
+    navigate(`/inventory?category=${encodeURIComponent(category)}`);
+  };
+
+  const handleCostCenterClick = (costCenter) => {
+    navigate(`/inventory?cost_center=${encodeURIComponent(costCenter)}`);
+  };
+
+  const handleDeploymentClick = (deploymentType) => {
+    navigate(`/inventory?deployment_type=${encodeURIComponent(deploymentType)}`);
+  };
+
+  // Custom bar click handler
+  const handleBarClick = (data, chartType) => {
+    if (chartType === 'category') {
+      handleCategoryClick(data.category);
+    } else if (chartType === 'costCenter') {
+      handleCostCenterClick(data.cost_center);
+    }
+  };
+
   const deploymentData = kpis?.deployment_breakdown ? 
     Object.entries(kpis.deployment_breakdown)
       .filter(([_, v]) => v > 0)
@@ -170,26 +163,17 @@ const DashboardPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
-              {getDashboardTitle()}
-            </h1>
-            <Badge variant="outline" className={`text-xs ${
-              isAdmin() ? 'bg-lime-100 text-lime-700 border-lime-300' :
-              isManager() ? 'bg-blue-100 text-blue-700 border-blue-300' :
-              'bg-slate-100 text-slate-600 border-slate-300'
-            }`}>
-              {user?.role}
-            </Badge>
-          </div>
-          <p className="text-slate-500 mt-1">{getDashboardSubtitle()}</p>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
+            Executive Dashboard
+          </h1>
+          <p className="text-slate-500 mt-1">Systems inventory overview and analytics</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={fetchDashboardData} data-testid="refresh-btn">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          {isAdmin() && (!kpis || kpis.total_apps === 0) && (
+          {(!kpis || kpis.total_apps === 0) && (
             <Button size="sm" onClick={seedData} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="seed-btn">
               Generate Sample Data
             </Button>
@@ -270,140 +254,81 @@ const DashboardPage = () => {
         </Card>
       )}
 
-      {/* KPI Cards - Role-specific */}
-      {isViewer() ? (
-        /* Analyst View - Usage Focused KPIs */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="kpi-card" data-testid="kpi-total-apps">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Applications in Scope</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatNumber(kpis?.total_apps || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-slate-600" />
-              </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="kpi-card" data-testid="kpi-total-apps">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Total Applications</p>
+              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                {formatNumber(kpis?.total_apps || 0)}
+              </p>
             </div>
-          </Card>
+            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-slate-600" />
+            </div>
+          </div>
+        </Card>
 
-          <Card className="kpi-card-accent" data-testid="kpi-engaged-users">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Engaged Users</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatNumber(kpis?.total_engaged_users || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-lime-600" />
-              </div>
+        <Card className="kpi-card-accent" data-testid="kpi-total-spend">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Contract Annual Spend</p>
+              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                {formatCurrency(kpis?.total_contract_spend || 0)}
+              </p>
             </div>
-          </Card>
+            <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-lime-600" />
+            </div>
+          </div>
+        </Card>
 
-          <Card className="kpi-card" data-testid="kpi-provisioned">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Provisioned Users</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatNumber(executiveSummary?.metrics?.total_provisioned || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-slate-600" />
-              </div>
+        <Card className="kpi-card" data-testid="kpi-ytd-expense">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Fiscal YTD Expense</p>
+              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                {formatCurrency(kpis?.total_ytd_expense || 0)}
+              </p>
             </div>
-          </Card>
+            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-slate-600" />
+            </div>
+          </div>
+        </Card>
 
-          <Card className="kpi-card" data-testid="kpi-engagement-rate">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Engagement Rate</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {executiveSummary?.metrics?.total_provisioned > 0 
-                    ? `${((kpis?.total_engaged_users || 0) / executiveSummary.metrics.total_provisioned * 100).toFixed(1)}%`
-                    : '0%'}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-slate-600" />
-              </div>
+        <Card className="kpi-card" data-testid="kpi-engaged-users">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Engaged Users</p>
+              <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
+                {formatNumber(kpis?.total_engaged_users || 0)}
+              </p>
             </div>
-          </Card>
-        </div>
-      ) : (
-        /* Executive & Manager View - Financial KPIs */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="kpi-card" data-testid="kpi-total-apps">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Total Applications</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatNumber(kpis?.total_apps || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-slate-600" />
-              </div>
+            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-slate-600" />
             </div>
-          </Card>
+          </div>
+        </Card>
+      </div>
 
-          <Card className="kpi-card-accent" data-testid="kpi-total-spend">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Contract Annual Spend</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatCurrency(kpis?.total_contract_spend || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-lime-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="kpi-card" data-testid="kpi-ytd-expense">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Fiscal YTD Expense</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatCurrency(kpis?.total_ytd_expense || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-slate-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="kpi-card" data-testid="kpi-engaged-users">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Engaged Users</p>
-                <p className="text-3xl font-heading font-bold text-zinc-900 mt-1">
-                  {formatNumber(kpis?.total_engaged_users || 0)}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-slate-600" />
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Deployment Breakdown */}
+      {/* Deployment Breakdown - Clickable */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Cloud', value: kpis?.deployment_breakdown?.Cloud || 0, icon: Cloud, color: 'bg-lime-100 text-lime-700' },
-          { label: 'On-Prem', value: kpis?.deployment_breakdown?.['On-Prem'] || 0, icon: Server, color: 'bg-zinc-100 text-zinc-700' },
-          { label: 'Hybrid', value: kpis?.deployment_breakdown?.Hybrid || 0, icon: Building2, color: 'bg-blue-100 text-blue-700' },
-          { label: 'Unknown', value: kpis?.deployment_breakdown?.Unknown || 0, icon: HelpCircle, color: 'bg-slate-100 text-slate-500' },
+          { label: 'Cloud', value: kpis?.deployment_breakdown?.Cloud || 0, icon: Cloud, color: 'bg-lime-100 text-lime-700 hover:bg-lime-200' },
+          { label: 'On-Prem', value: kpis?.deployment_breakdown?.['On-Prem'] || 0, icon: Server, color: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200' },
+          { label: 'Hybrid', value: kpis?.deployment_breakdown?.Hybrid || 0, icon: Building2, color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
+          { label: 'Unknown', value: kpis?.deployment_breakdown?.Unknown || 0, icon: HelpCircle, color: 'bg-slate-100 text-slate-500 hover:bg-slate-200' },
         ].map(item => (
-          <Card key={item.label} className="border-slate-200">
+          <Card 
+            key={item.label} 
+            className="border-slate-200 cursor-pointer transition-all hover:shadow-md"
+            onClick={() => handleDeploymentClick(item.label)}
+            data-testid={`deployment-${item.label.toLowerCase()}`}
+          >
             <CardContent className="p-4 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.color}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${item.color}`}>
                 <item.icon className="w-5 h-5" />
               </div>
               <div>
@@ -417,11 +342,11 @@ const DashboardPage = () => {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Spend by Category */}
+        {/* Spend by Category - Clickable */}
         <Card className="border-slate-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-heading">Spend by Category</CardTitle>
-            <CardDescription>Top 10 categories by annual spend</CardDescription>
+            <CardDescription>Click a bar to view applications in that category</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -431,18 +356,24 @@ const DashboardPage = () => {
                   <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11 }} />
                   <YAxis dataKey="category" type="category" tick={{ fontSize: 11 }} width={100} />
                   <Tooltip formatter={(v) => formatCurrency(v)} />
-                  <Bar dataKey="total_spend" fill="#84CC16" radius={[0, 4, 4, 0]} />
+                  <Bar 
+                    dataKey="total_spend" 
+                    fill="#84CC16" 
+                    radius={[0, 4, 4, 0]} 
+                    cursor="pointer"
+                    onClick={(data) => handleBarClick(data, 'category')}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Deployment Pie Chart */}
+        {/* Deployment Pie Chart - Clickable */}
         <Card className="border-slate-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-heading">Deployment Distribution</CardTitle>
-            <CardDescription>Cloud vs On-Prem vs Hybrid</CardDescription>
+            <CardDescription>Click a segment to view applications</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -458,6 +389,8 @@ const DashboardPage = () => {
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     labelLine={false}
+                    cursor="pointer"
+                    onClick={(data) => handleDeploymentClick(data.name)}
                   >
                     {deploymentData.map((_, index) => (
                       <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
@@ -471,11 +404,11 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        {/* Apps by Category */}
+        {/* Apps by Category - Clickable */}
         <Card className="border-slate-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-heading">Apps by Category</CardTitle>
-            <CardDescription>Application count per category</CardDescription>
+            <CardDescription>Click a bar to view applications</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -490,18 +423,24 @@ const DashboardPage = () => {
                   />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#18181B" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#18181B" 
+                    radius={[4, 4, 0, 0]} 
+                    cursor="pointer"
+                    onClick={(data) => handleBarClick(data, 'category')}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Spend by Cost Center */}
+        {/* Spend by Cost Center - Clickable */}
         <Card className="border-slate-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-heading">Spend by Cost Center</CardTitle>
-            <CardDescription>Top 10 cost centers</CardDescription>
+            <CardDescription>Click a bar to view applications in that cost center</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -511,7 +450,13 @@ const DashboardPage = () => {
                   <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11 }} />
                   <YAxis dataKey="cost_center" type="category" tick={{ fontSize: 11 }} width={100} />
                   <Tooltip formatter={(v) => formatCurrency(v)} />
-                  <Bar dataKey="total_spend" fill="#64748B" radius={[0, 4, 4, 0]} />
+                  <Bar 
+                    dataKey="total_spend" 
+                    fill="#64748B" 
+                    radius={[0, 4, 4, 0]} 
+                    cursor="pointer"
+                    onClick={(data) => handleBarClick(data, 'costCenter')}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

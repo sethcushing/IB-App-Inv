@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import {
   Search, Filter, ChevronUp, ChevronDown, ChevronRight, RefreshCw, Plus, X
 } from 'lucide-react';
-import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -66,7 +65,6 @@ const InventoryPage = () => {
   const [newAppForm, setNewAppForm] = useState(emptyAppForm);
   const [submitting, setSubmitting] = useState(false);
   
-  // Initialize filters from URL params
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     status: searchParams.get('status') || '',
@@ -81,7 +79,6 @@ const InventoryPage = () => {
   const [page, setPage] = useState(0);
   const limit = 25;
 
-  // Active filter from URL
   const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('deployment_type');
 
   const fetchApplications = useCallback(async () => {
@@ -118,7 +115,6 @@ const InventoryPage = () => {
     fetchApplications();
   }, [fetchApplications]);
 
-  // Update filters when URL params change
   useEffect(() => {
     const newFilters = {
       search: searchParams.get('search') || '',
@@ -194,21 +190,21 @@ const InventoryPage = () => {
       <ChevronDown className="w-4 h-4 inline ml-1" />;
   };
 
-  const getStatusBadgeVariant = (status) => {
+  const getStatusBadgeClass = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved': return 'default';
-      case 'deprecated': return 'destructive';
-      case 'under_review': return 'secondary';
-      default: return 'outline';
+      case 'approved': return 'badge-lime';
+      case 'deprecated': case 'retired': return 'badge-red';
+      case 'under_review': case 'in_review': return 'badge-amber';
+      default: return 'bg-white/10 text-white/50 border-white/10';
     }
   };
 
   const getDeploymentBadgeClass = (type) => {
     switch (type) {
-      case 'Cloud': return 'bg-lime-100 text-lime-700 border-lime-200';
-      case 'On-Prem': return 'bg-zinc-100 text-zinc-700 border-zinc-200';
-      case 'Hybrid': return 'bg-blue-100 text-blue-700 border-blue-200';
-      default: return 'bg-slate-100 text-slate-500 border-slate-200';
+      case 'Cloud': return 'badge-lime';
+      case 'On-Prem': return 'badge-blue';
+      case 'Hybrid': return 'bg-purple-500/15 border-purple-500/30 text-purple-400';
+      default: return 'bg-white/10 text-white/40 border-white/10';
     }
   };
 
@@ -219,19 +215,30 @@ const InventoryPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-zinc-900">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white">
             Application Inventory
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-white/50 mt-1">
             {total} applications {activeUrlFilter ? 'matching filter' : 'in portfolio'}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchApplications} data-testid="refresh-inventory">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchApplications} 
+            data-testid="refresh-inventory"
+            className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button size="sm" onClick={openAddModal} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="add-application-btn">
+          <Button 
+            size="sm" 
+            onClick={openAddModal} 
+            data-testid="add-application-btn"
+            className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Application
           </Button>
@@ -240,196 +247,222 @@ const InventoryPage = () => {
 
       {/* Active Filter Banner */}
       {activeUrlFilter && (
-        <Card className="border-lime-200 bg-lime-50">
-          <CardContent className="p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-lime-600" />
-              <span className="text-sm text-lime-800">
-                Filtered by: <strong>{activeUrlFilter}</strong>
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-lime-700 hover:text-lime-900">
-              <X className="w-4 h-4 mr-1" />
-              Clear Filter
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-3 border-l-4 border-l-lime-500 bg-gradient-to-r from-lime-500/10 to-transparent flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-lime-400" />
+            <span className="text-sm text-white/80">
+              Filtered by: <strong className="text-lime-400">{activeUrlFilter}</strong>
+            </span>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={clearFilters} 
+            className="text-white/50 hover:text-white hover:bg-white/5"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Clear
+          </Button>
+        </div>
       )}
 
       {/* Filters */}
-      <Card className="border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search apps or vendors..."
-                className="pl-9"
-                value={filters.search}
-                onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setPage(0); }}
-                data-testid="inventory-search"
-              />
-            </div>
-            
-            <Select value={filters.functional_category} onValueChange={(v) => { setFilters({ ...filters, functional_category: v === 'all' ? '' : v }); setPage(0); }}>
-              <SelectTrigger className="w-[180px]" data-testid="inventory-category-filter">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {filterOptions.categories?.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.deployment_type} onValueChange={(v) => { setFilters({ ...filters, deployment_type: v === 'all' ? '' : v }); setPage(0); }}>
-              <SelectTrigger className="w-[150px]" data-testid="inventory-deployment-filter">
-                <SelectValue placeholder="Deployment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {filterOptions.deployment_types?.map(dt => (
-                  <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.status} onValueChange={(v) => { setFilters({ ...filters, status: v === 'all' ? '' : v }); setPage(0); }}>
-              <SelectTrigger className="w-[140px]" data-testid="inventory-status-filter">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                {filterOptions.statuses?.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.vendor} onValueChange={(v) => { setFilters({ ...filters, vendor: v === 'all' ? '' : v }); setPage(0); }}>
-              <SelectTrigger className="w-[150px]" data-testid="inventory-vendor-filter">
-                <SelectValue placeholder="Vendor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Vendors</SelectItem>
-                {filterOptions.vendors?.slice(0, 20).map(v => (
-                  <SelectItem key={v} value={v}>{v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="clear-inventory-filters">
-              <Filter className="w-4 h-4 mr-1" />
-              Clear
-            </Button>
+      <div className="glass-card p-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Input
+              placeholder="Search apps or vendors..."
+              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-lime-500/50"
+              value={filters.search}
+              onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setPage(0); }}
+              data-testid="inventory-search"
+            />
           </div>
-        </CardContent>
-      </Card>
+          
+          <Select value={filters.functional_category} onValueChange={(v) => { setFilters({ ...filters, functional_category: v === 'all' ? '' : v }); setPage(0); }}>
+            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-category-filter">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Categories</SelectItem>
+              {filterOptions.categories?.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.deployment_type} onValueChange={(v) => { setFilters({ ...filters, deployment_type: v === 'all' ? '' : v }); setPage(0); }}>
+            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-deployment-filter">
+              <SelectValue placeholder="Deployment" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Types</SelectItem>
+              {filterOptions.deployment_types?.map(dt => (
+                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.status} onValueChange={(v) => { setFilters({ ...filters, status: v === 'all' ? '' : v }); setPage(0); }}>
+            <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-status-filter">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Status</SelectItem>
+              {filterOptions.statuses?.map(s => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.vendor} onValueChange={(v) => { setFilters({ ...filters, vendor: v === 'all' ? '' : v }); setPage(0); }}>
+            <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white/70" data-testid="inventory-vendor-filter">
+              <SelectValue placeholder="Vendor" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-white/10">
+              <SelectItem value="all">All Vendors</SelectItem>
+              {filterOptions.vendors?.slice(0, 20).map(v => (
+                <SelectItem key={v} value={v}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={clearFilters} 
+            data-testid="clear-inventory-filters"
+            className="text-white/50 hover:text-white hover:bg-white/5"
+          >
+            <Filter className="w-4 h-4 mr-1" />
+            Clear
+          </Button>
+        </div>
+      </div>
 
       {/* Table */}
-      <Card className="border-slate-200">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-pulse text-slate-500">Loading applications...</div>
+      <div className="glass-card overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-white/50 flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+              Loading applications...
             </div>
-          ) : applications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <p className="text-slate-500">No applications found</p>
-              <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or import data</p>
-              <Button size="sm" onClick={openAddModal} className="mt-4 bg-lime-500 hover:bg-lime-600 text-zinc-900">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Application
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full" data-testid="inventory-table">
-                <thead>
-                  <tr className="table-header border-b border-slate-200">
-                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('title')}>
-                      Title <SortIcon field="title" />
-                    </th>
-                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('status')}>
-                      Status <SortIcon field="status" />
-                    </th>
-                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('functional_category')}>
-                      Category <SortIcon field="functional_category" />
-                    </th>
-                    <th className="text-left p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('vendor')}>
-                      Vendor <SortIcon field="vendor" />
-                    </th>
-                    <th className="text-center p-4">Deployment</th>
-                    <th className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('contract_annual_spend')}>
-                      Annual Spend <SortIcon field="contract_annual_spend" />
-                    </th>
-                    <th className="text-right p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('engaged_users')}>
-                      Engaged <SortIcon field="engaged_users" />
-                    </th>
-                    <th className="text-left p-4">Owner</th>
-                    <th className="text-center p-4"></th>
+          </div>
+        ) : applications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <p className="text-white/50">No applications found</p>
+            <p className="text-sm text-white/30 mt-1">Try adjusting your filters or import data</p>
+            <Button 
+              size="sm" 
+              onClick={openAddModal} 
+              className="mt-4 bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add First Application
+            </Button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full" data-testid="inventory-table">
+              <thead>
+                <tr className="table-header border-b border-white/5">
+                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('title')}>
+                    Title <SortIcon field="title" />
+                  </th>
+                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('status')}>
+                    Status <SortIcon field="status" />
+                  </th>
+                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('functional_category')}>
+                    Category <SortIcon field="functional_category" />
+                  </th>
+                  <th className="text-left p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('vendor')}>
+                    Vendor <SortIcon field="vendor" />
+                  </th>
+                  <th className="text-center p-4">Deployment</th>
+                  <th className="text-right p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('contract_annual_spend')}>
+                    Annual Spend <SortIcon field="contract_annual_spend" />
+                  </th>
+                  <th className="text-right p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleSort('engaged_users')}>
+                    Engaged <SortIcon field="engaged_users" />
+                  </th>
+                  <th className="text-left p-4">Owner</th>
+                  <th className="text-center p-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {applications.map((app) => (
+                  <tr 
+                    key={app.app_id}
+                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/applications/${app.app_id}`)}
+                    data-testid={`app-row-${app.app_id}`}
+                  >
+                    <td className="p-4">
+                      <p className="font-medium text-white max-w-[200px] truncate">{app.title}</p>
+                    </td>
+                    <td className="p-4">
+                      <Badge className={`capitalize text-xs ${getStatusBadgeClass(app.status)}`}>
+                        {app.status || 'unknown'}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-white/60 text-sm max-w-[150px] truncate">
+                      {app.functional_category || '-'}
+                    </td>
+                    <td className="p-4 text-white/60 text-sm max-w-[120px] truncate">
+                      {app.vendor || '-'}
+                    </td>
+                    <td className="p-4 text-center">
+                      <Badge className={`text-xs ${getDeploymentBadgeClass(app.deployment_type)}`}>
+                        {app.deployment_type || 'Unknown'}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-right font-mono text-sm text-white/80">
+                      {formatCurrency(app.contract_annual_spend)}
+                    </td>
+                    <td className="p-4 text-right font-mono text-sm text-white/80">
+                      {app.engaged_users || 0}
+                    </td>
+                    <td className="p-4 text-white/60 text-sm max-w-[120px] truncate">
+                      {app.product_owner_name || '-'}
+                    </td>
+                    <td className="p-4 text-center">
+                      <ChevronRight className="w-4 h-4 text-white/30 inline" />
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {applications.map((app) => (
-                    <tr 
-                      key={app.app_id}
-                      className="hover:bg-slate-50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/applications/${app.app_id}`)}
-                      data-testid={`app-row-${app.app_id}`}
-                    >
-                      <td className="p-4">
-                        <p className="font-medium text-zinc-900 max-w-[200px] truncate">{app.title}</p>
-                      </td>
-                      <td className="p-4">
-                        <Badge variant={getStatusBadgeVariant(app.status)} className="capitalize text-xs">
-                          {app.status || 'unknown'}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-slate-600 text-sm max-w-[150px] truncate">
-                        {app.functional_category || '-'}
-                      </td>
-                      <td className="p-4 text-slate-600 text-sm max-w-[120px] truncate">
-                        {app.vendor || '-'}
-                      </td>
-                      <td className="p-4 text-center">
-                        <Badge variant="outline" className={`text-xs ${getDeploymentBadgeClass(app.deployment_type)}`}>
-                          {app.deployment_type || 'Unknown'}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-right font-mono text-sm">
-                        {formatCurrency(app.contract_annual_spend)}
-                      </td>
-                      <td className="p-4 text-right font-mono text-sm">
-                        {app.engaged_users || 0}
-                      </td>
-                      <td className="p-4 text-slate-600 text-sm max-w-[120px] truncate">
-                        {app.product_owner_name || '-'}
-                      </td>
-                      <td className="p-4 text-center">
-                        <ChevronRight className="w-4 h-4 text-slate-400 inline" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-white/50">
             Showing {page * limit + 1} - {Math.min((page + 1) * limit, total)} of {total}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} data-testid="prev-page">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPage(Math.max(0, page - 1))} 
+              disabled={page === 0} 
+              data-testid="prev-page"
+              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30"
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} data-testid="next-page">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+              disabled={page >= totalPages - 1} 
+              data-testid="next-page"
+              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30"
+            >
               Next
             </Button>
           </div>
@@ -438,10 +471,10 @@ const InventoryPage = () => {
 
       {/* Add Application Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-zinc-900 border-white/10">
           <DialogHeader>
-            <DialogTitle>Add New Application</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Add New Application</DialogTitle>
+            <DialogDescription className="text-white/50">
               Enter the details for the new application. Required fields are marked with *.
             </DialogDescription>
           </DialogHeader>
@@ -449,18 +482,32 @@ const InventoryPage = () => {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label htmlFor="app-title">Application Title *</Label>
-                <Input id="app-title" value={newAppForm.title} onChange={(e) => setNewAppForm({ ...newAppForm, title: e.target.value })} placeholder="e.g., Salesforce CRM" className="mt-1" data-testid="new-app-title" />
+                <Label htmlFor="app-title" className="text-white/70">Application Title *</Label>
+                <Input 
+                  id="app-title" 
+                  value={newAppForm.title} 
+                  onChange={(e) => setNewAppForm({ ...newAppForm, title: e.target.value })} 
+                  placeholder="e.g., Salesforce CRM" 
+                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  data-testid="new-app-title" 
+                />
               </div>
               <div>
-                <Label htmlFor="app-vendor">Vendor</Label>
-                <Input id="app-vendor" value={newAppForm.vendor} onChange={(e) => setNewAppForm({ ...newAppForm, vendor: e.target.value })} placeholder="e.g., Salesforce" className="mt-1" data-testid="new-app-vendor" />
+                <Label htmlFor="app-vendor" className="text-white/70">Vendor</Label>
+                <Input 
+                  id="app-vendor" 
+                  value={newAppForm.vendor} 
+                  onChange={(e) => setNewAppForm({ ...newAppForm, vendor: e.target.value })} 
+                  placeholder="e.g., Salesforce" 
+                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  data-testid="new-app-vendor" 
+                />
               </div>
               <div>
-                <Label htmlFor="app-status">Status</Label>
+                <Label htmlFor="app-status" className="text-white/70">Status</Label>
                 <Select value={newAppForm.status} onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}>
-                  <SelectTrigger className="mt-1" data-testid="new-app-status"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="new-app-status"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10">
                     <SelectItem value="under_review">Under Review</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
                     <SelectItem value="deprecated">Deprecated</SelectItem>
@@ -472,14 +519,21 @@ const InventoryPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="app-category">Functional Category</Label>
-                <Input id="app-category" value={newAppForm.functional_category} onChange={(e) => setNewAppForm({ ...newAppForm, functional_category: e.target.value })} placeholder="e.g., Sales Engagement" className="mt-1" data-testid="new-app-category" />
+                <Label htmlFor="app-category" className="text-white/70">Functional Category</Label>
+                <Input 
+                  id="app-category" 
+                  value={newAppForm.functional_category} 
+                  onChange={(e) => setNewAppForm({ ...newAppForm, functional_category: e.target.value })} 
+                  placeholder="e.g., Sales Engagement" 
+                  className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                  data-testid="new-app-category" 
+                />
               </div>
               <div>
-                <Label htmlFor="app-deployment">Deployment Type</Label>
+                <Label htmlFor="app-deployment" className="text-white/70">Deployment Type</Label>
                 <Select value={newAppForm.deployment_type} onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}>
-                  <SelectTrigger className="mt-1" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="mt-1 bg-white/5 border-white/10 text-white" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10">
                     <SelectItem value="Cloud">Cloud</SelectItem>
                     <SelectItem value="On-Prem">On-Prem</SelectItem>
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
@@ -490,50 +544,115 @@ const InventoryPage = () => {
             </div>
 
             <div>
-              <Label htmlFor="app-description">Description</Label>
-              <Textarea id="app-description" value={newAppForm.short_description} onChange={(e) => setNewAppForm({ ...newAppForm, short_description: e.target.value })} placeholder="Brief description..." className="mt-1" rows={2} data-testid="new-app-description" />
+              <Label htmlFor="app-description" className="text-white/70">Description</Label>
+              <Textarea 
+                id="app-description" 
+                value={newAppForm.short_description} 
+                onChange={(e) => setNewAppForm({ ...newAppForm, short_description: e.target.value })} 
+                placeholder="Brief description..." 
+                className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                rows={2} 
+                data-testid="new-app-description" 
+              />
             </div>
 
-            <div className="border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Financial Information</h4>
+            <div className="border-t border-white/10 pt-4">
+              <h4 className="text-sm font-medium text-white/70 mb-3">Financial Information</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="app-spend">Contract Annual Spend ($)</Label>
-                  <Input id="app-spend" type="number" value={newAppForm.contract_annual_spend} onChange={(e) => setNewAppForm({ ...newAppForm, contract_annual_spend: e.target.value })} placeholder="0" className="mt-1" data-testid="new-app-spend" />
+                  <Label htmlFor="app-spend" className="text-white/70">Contract Annual Spend ($)</Label>
+                  <Input 
+                    id="app-spend" 
+                    type="number" 
+                    value={newAppForm.contract_annual_spend} 
+                    onChange={(e) => setNewAppForm({ ...newAppForm, contract_annual_spend: e.target.value })} 
+                    placeholder="0" 
+                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    data-testid="new-app-spend" 
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="app-ytd">Fiscal YTD Expense ($)</Label>
-                  <Input id="app-ytd" type="number" value={newAppForm.fiscal_ytd_expense_total} onChange={(e) => setNewAppForm({ ...newAppForm, fiscal_ytd_expense_total: e.target.value })} placeholder="0" className="mt-1" data-testid="new-app-ytd" />
+                  <Label htmlFor="app-ytd" className="text-white/70">Fiscal YTD Expense ($)</Label>
+                  <Input 
+                    id="app-ytd" 
+                    type="number" 
+                    value={newAppForm.fiscal_ytd_expense_total} 
+                    onChange={(e) => setNewAppForm({ ...newAppForm, fiscal_ytd_expense_total: e.target.value })} 
+                    placeholder="0" 
+                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    data-testid="new-app-ytd" 
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Usage & Ownership</h4>
+            <div className="border-t border-white/10 pt-4">
+              <h4 className="text-sm font-medium text-white/70 mb-3">Usage & Ownership</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="app-engaged">Engaged Users</Label>
-                  <Input id="app-engaged" type="number" value={newAppForm.engaged_users} onChange={(e) => setNewAppForm({ ...newAppForm, engaged_users: e.target.value })} placeholder="0" className="mt-1" data-testid="new-app-engaged" />
+                  <Label htmlFor="app-engaged" className="text-white/70">Engaged Users</Label>
+                  <Input 
+                    id="app-engaged" 
+                    type="number" 
+                    value={newAppForm.engaged_users} 
+                    onChange={(e) => setNewAppForm({ ...newAppForm, engaged_users: e.target.value })} 
+                    placeholder="0" 
+                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    data-testid="new-app-engaged" 
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="app-cost-center">Cost Center</Label>
-                  <Input id="app-cost-center" value={newAppForm.cost_center_primary} onChange={(e) => setNewAppForm({ ...newAppForm, cost_center_primary: e.target.value })} placeholder="e.g., 650-it executive" className="mt-1" data-testid="new-app-cost-center" />
+                  <Label htmlFor="app-cost-center" className="text-white/70">Cost Center</Label>
+                  <Input 
+                    id="app-cost-center" 
+                    value={newAppForm.cost_center_primary} 
+                    onChange={(e) => setNewAppForm({ ...newAppForm, cost_center_primary: e.target.value })} 
+                    placeholder="e.g., 650-it executive" 
+                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    data-testid="new-app-cost-center" 
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="app-owner">Product Owner</Label>
-                  <Input id="app-owner" value={newAppForm.product_owner_name} onChange={(e) => setNewAppForm({ ...newAppForm, product_owner_name: e.target.value })} placeholder="Owner name" className="mt-1" data-testid="new-app-owner" />
+                  <Label htmlFor="app-owner" className="text-white/70">Product Owner</Label>
+                  <Input 
+                    id="app-owner" 
+                    value={newAppForm.product_owner_name} 
+                    onChange={(e) => setNewAppForm({ ...newAppForm, product_owner_name: e.target.value })} 
+                    placeholder="Owner name" 
+                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    data-testid="new-app-owner" 
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="app-it-contact">IT Contact</Label>
-                  <Input id="app-it-contact" value={newAppForm.it_contact} onChange={(e) => setNewAppForm({ ...newAppForm, it_contact: e.target.value })} placeholder="IT contact name" className="mt-1" data-testid="new-app-it-contact" />
+                  <Label htmlFor="app-it-contact" className="text-white/70">IT Contact</Label>
+                  <Input 
+                    id="app-it-contact" 
+                    value={newAppForm.it_contact} 
+                    onChange={(e) => setNewAppForm({ ...newAppForm, it_contact: e.target.value })} 
+                    placeholder="IT contact name" 
+                    className="mt-1 bg-white/5 border-white/10 text-white placeholder:text-white/30" 
+                    data-testid="new-app-it-contact" 
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddModalOpen(false)} disabled={submitting}>Cancel</Button>
-            <Button onClick={handleAddApplication} disabled={submitting || !newAppForm.title.trim()} className="bg-lime-500 hover:bg-lime-600 text-zinc-900" data-testid="submit-new-app">
+            <Button 
+              variant="outline" 
+              onClick={() => setAddModalOpen(false)} 
+              disabled={submitting}
+              className="bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddApplication} 
+              disabled={submitting || !newAppForm.title.trim()} 
+              data-testid="submit-new-app"
+              className="bg-lime-500 hover:bg-lime-400 text-zinc-900 font-medium"
+            >
               {submitting ? 'Creating...' : 'Create Application'}
             </Button>
           </DialogFooter>

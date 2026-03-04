@@ -367,7 +367,7 @@ const InventoryPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="inventory-table">
               <thead>
-                <tr className="table-header border-b border-white/5">
+                <tr className="table-header border-b-2 border-[var(--glass-border)]">
                   <th className="text-left p-4 cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors" onClick={() => handleSort('title')}>
                     Title <SortIcon field="title" />
                   </th>
@@ -391,11 +391,11 @@ const InventoryPage = () => {
                   <th className="text-center p-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody>
                 {applications.map((app) => (
                   <tr 
                     key={app.app_id}
-                    className="hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors"
+                    className="table-row-bordered hover:bg-[var(--glass-highlight)] cursor-pointer transition-colors"
                     onClick={() => navigate(`/applications/${app.app_id}`)}
                     data-testid={`app-row-${app.app_id}`}
                   >

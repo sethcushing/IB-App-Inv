@@ -88,7 +88,8 @@ Build a clean, minimal, executive-friendly Systems Inventory application that im
 - `GET /api/applications`: List with filtering, sorting, pagination
 - `POST /api/applications`: Create new (with duplicate detection)
 - `GET /api/dashboard/*`: KPIs, charts data, executive summary
-- `POST /api/ai/scan-capabilities`: AI-powered capability overlap detection
+- `POST /api/ai/scan-capabilities`: AI-powered capability overlap detection (single app)
+- `POST /api/ai/portfolio-heatmap`: AI-powered C-Suite portfolio analysis (GPT-4o)
 - `POST /api/import/upload`: Excel/CSV import
 - `GET /api/import/template`: Download CSV template
 

@@ -696,6 +696,178 @@ Only include apps with overlap_score >= 30. Return empty array if no significant
         logger.error(f"AI capability scan error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
 
+
+@api_router.post("/ai/portfolio-heatmap")
+async def generate_portfolio_heatmap():
+    """Generate AI-powered C-Suite executive heatmap analysis of entire portfolio"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import json
+    
+    # Get all applications with relevant data
+    apps = await db.applications.find(
+        {},
+        {"_id": 0, "app_id": 1, "title": 1, "vendor": 1, "capabilities": 1, 
+         "short_description": 1, "functional_category": 1, "contract_annual_spend": 1,
+         "fiscal_ytd_expense_total": 1, "engaged_users": 1, "provisioned_users": 1,
+         "deployment_type": 1, "status": 1}
+    ).to_list(length=500)
+    
+    if not apps:
+        raise HTTPException(status_code=404, detail="No applications found in portfolio")
+    
+    # Calculate portfolio statistics
+    total_spend = sum(app.get("contract_annual_spend", 0) or 0 for app in apps)
+    total_users = sum(app.get("engaged_users", 0) or 0 for app in apps)
+    
+    # Build condensed app summaries for AI analysis
+    apps_summary = []
+    for app in apps:
+        cap = app.get("capabilities") or app.get("short_description") or ""
+        spend = app.get("contract_annual_spend", 0) or 0
+        users = app.get("engaged_users", 0) or 0
+        apps_summary.append({
+            "id": app["app_id"],
+            "title": app["title"],
+            "vendor": app.get("vendor", "Unknown"),
+            "category": app.get("functional_category", "Uncategorized"),
+            "capabilities": cap[:150] if cap else "No capabilities listed",
+            "spend": spend,
+            "users": users,
+            "deployment": app.get("deployment_type", "Unknown")
+        })
+    
+    # Sort by spend for priority analysis
+    apps_summary.sort(key=lambda x: x["spend"], reverse=True)
+    
+    # Build AI prompt - focus on top 100 apps by spend for context limits
+    top_apps = apps_summary[:100]
+    apps_text = "\n".join([
+        f"- {a['title']} | {a['vendor']} | {a['category']} | ${a['spend']:,.0f}/yr | {a['users']} users | {a['capabilities'][:80]}"
+        for a in top_apps
+    ])
+    
+    prompt = f"""You are a C-Suite IT Portfolio Advisor analyzing a software portfolio for executive decision-making.
+
+PORTFOLIO OVERVIEW:
+- Total Applications: {len(apps)}
+- Total Annual Spend: ${total_spend:,.0f}
+- Total Engaged Users: {total_users:,}
+
+TOP APPLICATIONS BY SPEND:
+{apps_text}
+
+Analyze this portfolio and provide an EXECUTIVE-LEVEL assessment in this exact JSON format:
+
+{{
+  "executive_summary": "2-3 sentence C-Suite summary of portfolio health and key concerns",
+  
+  "overlap_clusters": [
+    {{
+      "cluster_name": "Name for this overlap group (e.g., 'CRM & Sales Tools')",
+      "severity": "high|medium|low",
+      "apps": ["App1", "App2", "App3"],
+      "combined_spend": 150000,
+      "recommendation": "1 sentence consolidation recommendation",
+      "potential_savings": 50000
+    }}
+  ],
+  
+  "consolidation_opportunities": [
+    {{
+      "title": "Opportunity name",
+      "apps_involved": ["App1", "App2"],
+      "current_spend": 200000,
+      "estimated_savings": 80000,
+      "effort": "low|medium|high",
+      "rationale": "Why consolidate"
+    }}
+  ],
+  
+  "risk_areas": [
+    {{
+      "risk_type": "single_point_of_failure|vendor_concentration|security|compliance",
+      "severity": "critical|high|medium",
+      "description": "Brief risk description",
+      "affected_apps": ["App1"],
+      "mitigation": "Recommended action"
+    }}
+  ],
+  
+  "underutilized_high_cost": [
+    {{
+      "app_title": "App name",
+      "annual_spend": 100000,
+      "engaged_users": 5,
+      "cost_per_user": 20000,
+      "recommendation": "Action to take"
+    }}
+  ],
+  
+  "category_breakdown": [
+    {{
+      "category": "IT",
+      "app_count": 50,
+      "total_spend": 5000000,
+      "overlap_risk": "high|medium|low"
+    }}
+  ],
+  
+  "action_items": [
+    {{
+      "priority": 1,
+      "action": "Immediate action recommendation",
+      "impact": "high|medium",
+      "estimated_savings": 100000
+    }}
+  ]
+}}
+
+Focus on:
+1. Finding REAL capability overlaps where consolidation makes business sense
+2. Identifying apps with high spend but low user engagement
+3. Vendor concentration risks
+4. Actionable recommendations with estimated savings
+5. Be specific with app names and numbers"""
+
+    try:
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"portfolio-heatmap-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            system_message="You are a senior IT portfolio strategist providing C-Suite level analysis. Be specific, actionable, and data-driven. Respond only with valid JSON."
+        ).with_model("openai", "gpt-4o")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        # Parse AI response
+        try:
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                result = json.loads(json_match.group())
+            else:
+                result = {"error": "Unable to parse AI response"}
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error: {e}")
+            result = {"error": "AI response parsing error"}
+        
+        # Add metadata
+        result["metadata"] = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "total_apps_analyzed": len(apps),
+            "total_portfolio_spend": total_spend,
+            "total_engaged_users": total_users
+        }
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Portfolio heatmap analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
+
 # ============ IMPORT ROUTES ============
 
 @api_router.post("/import/upload")

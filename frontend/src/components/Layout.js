@@ -11,12 +11,14 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  Box
+  Box,
+  Sparkles
 } from 'lucide-react';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/inventory', label: 'Inventory', icon: List },
+  { path: '/heatmap', label: 'AI Heatmap', icon: Sparkles, highlight: true },
   { path: '/requests', label: 'Requests', icon: Inbox },
   { path: '/import', label: 'Import', icon: Upload },
 ];

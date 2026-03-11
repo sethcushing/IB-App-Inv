@@ -33,6 +33,7 @@ const Layout = ({ children }) => {
     if (path === '/') return 'Executive Dashboard';
     if (path === '/inventory') return 'Application Inventory';
     if (path.startsWith('/applications/')) return 'Application Detail';
+    if (path === '/heatmap') return 'AI Portfolio Heatmap';
     if (path === '/requests') return 'Requests Center';
     if (path === '/import') return 'Import Data';
     return '';

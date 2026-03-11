@@ -7,6 +7,7 @@ import InventoryPage from "./pages/InventoryPage";
 import ApplicationDetailPage from "./pages/ApplicationDetailPage";
 import RequestsPage from "./pages/RequestsPage";
 import ImportPage from "./pages/ImportPage";
+import HeatmapPage from "./pages/HeatmapPage";
 import "./App.css";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <Route path="/inventory" element={<Layout><InventoryPage /></Layout>} />
           <Route path="/applications/:appId" element={<Layout><ApplicationDetailPage /></Layout>} />
           <Route path="/requests" element={<Layout><RequestsPage /></Layout>} />
+          <Route path="/heatmap" element={<Layout><HeatmapPage /></Layout>} />
           <Route path="/import" element={<Layout><ImportPage /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

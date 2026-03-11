@@ -17,10 +17,10 @@ import { useTheme } from '../context/ThemeContext';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const formatCurrency = (value) => {
-  if (!value) return '$0';
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
-  return `$${value.toFixed(0)}`;
+  const num = Number(value) || 0;
+  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `$${(num / 1000).toFixed(0)}K`;
+  return `$${num.toFixed(0)}`;
 };
 
 const getSeverityColor = (severity) => {

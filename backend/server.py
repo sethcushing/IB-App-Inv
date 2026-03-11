@@ -51,12 +51,12 @@ class ApplicationCreate(BaseModel):
     cost_center_primary: Optional[str] = None
     cost_centers: Optional[List[str]] = []
     product_owner_name: Optional[str] = None
-    data_steward_name: Optional[str] = None
-    it_contact: Optional[str] = None
+    business_pm: Optional[str] = None
+    support_lead: Optional[str] = None
+    lead_architect: Optional[str] = None
     security_contact: Optional[str] = None
     legal_contact: Optional[str] = None
     procurement_contact: Optional[str] = None
-    vendor_contact: Optional[str] = None
     general_contact: Optional[str] = None
 
 class ApplicationUpdate(BaseModel):

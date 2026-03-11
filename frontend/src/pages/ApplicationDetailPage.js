@@ -861,10 +861,10 @@ const ApplicationDetailPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { label: 'Product Owner', field: 'product_owner_name', icon: User },
-                { label: 'Data Steward', field: 'data_steward_name', icon: Database },
-                { label: 'IT Contact', field: 'it_contact', icon: User },
+                { label: 'Business PM', field: 'business_pm', icon: User },
+                { label: 'Support Lead', field: 'support_lead', icon: User },
+                { label: 'Lead Architect', field: 'lead_architect', icon: User },
                 { label: 'Security Contact', field: 'security_contact', icon: User },
-                { label: 'Vendor Contact', field: 'vendor_contact', icon: User },
                 { label: 'General Contact', field: 'general_contact', icon: User },
               ].map(({ label, field, icon: Icon }) => (
                 <div key={field} className="flex items-start gap-3 p-4 rounded-xl bg-[var(--glass-highlight)] border border-[var(--glass-border)]">

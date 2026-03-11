@@ -99,19 +99,23 @@ const Layout = ({ children }) => {
                     flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
                     transition-all duration-200 group relative
                     ${isActive 
-                      ? 'bg-green-500/15 text-green-500' 
-                      : 'text-theme-secondary hover:bg-[var(--glass-highlight)] hover:text-theme-primary'
+                      ? item.highlight 
+                        ? 'bg-purple-500/15 text-purple-400' 
+                        : 'bg-green-500/15 text-green-500' 
+                      : item.highlight
+                        ? 'text-purple-400/80 hover:bg-purple-500/10 hover:text-purple-400'
+                        : 'text-theme-secondary hover:bg-[var(--glass-highlight)] hover:text-theme-primary'
                     }
                   `}
-                  data-testid={`nav-${item.label.toLowerCase()}`}
+                  data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
                 >
                   {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-green-500 rounded-r-full" />
+                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 ${item.highlight ? 'bg-purple-500' : 'bg-green-500'} rounded-r-full`} />
                   )}
-                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-green-500' : 'group-hover:text-green-500/70'}`} />
+                  <Icon className={`w-5 h-5 transition-colors ${isActive ? (item.highlight ? 'text-purple-400' : 'text-green-500') : (item.highlight ? 'text-purple-400/70' : 'group-hover:text-green-500/70')}`} />
                   {item.label}
                   {isActive && (
-                    <ChevronRight className="w-4 h-4 ml-auto text-green-500/50" />
+                    <ChevronRight className={`w-4 h-4 ml-auto ${item.highlight ? 'text-purple-500/50' : 'text-green-500/50'}`} />
                   )}
                 </Link>
               );

@@ -63,6 +63,13 @@ Build a clean, minimal, executive-friendly Systems Inventory application that im
   - 5-Year total spend summary
   - 5-Year spend trend chart
   - Detailed 5-year financial history table with YoY change %, engaged users, and cost per user
+- [x] **AI Portfolio Heatmap** (GPT-4o powered C-Suite executive view):
+  - Capability overlap cluster detection with severity ratings
+  - Consolidation opportunities with savings estimates
+  - Risk area identification (vendor concentration, security, compliance)
+  - Underutilized high-cost application flagging
+  - Priority action items with estimated savings
+  - Category breakdown with overlap risk indicators
 
 ## Technical Architecture
 

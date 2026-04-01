@@ -48,28 +48,27 @@ const ALL_COLUMNS = [
   { id: 'status', label: 'Status', field: 'status', sortable: true, required: false },
   { id: 'functional_category', label: 'Category', field: 'functional_category', sortable: true, required: false, width: 'max-w-[150px]' },
   { id: 'vendor', label: 'Vendor', field: 'vendor', sortable: true, required: false, width: 'max-w-[120px]' },
-  { id: 'deployment_type', label: 'Deployment', field: 'deployment_type', sortable: false, required: false },
   { id: 'contract_annual_spend', label: 'Annual Spend', field: 'contract_annual_spend', sortable: true, required: false, align: 'right', format: 'currency' },
   { id: 'fiscal_ytd_expense_total', label: 'YTD Expense', field: 'fiscal_ytd_expense_total', sortable: true, required: false, align: 'right', format: 'currency' },
   { id: 'engaged_users', label: 'Engaged Users', field: 'engaged_users', sortable: true, required: false, align: 'right', format: 'number' },
   { id: 'provisioned_users', label: 'Provisioned', field: 'provisioned_users', sortable: true, required: false, align: 'right', format: 'number' },
+  { id: 'users_with_sso_access', label: 'SSO Users', field: 'users_with_sso_access', sortable: true, required: false, align: 'right', format: 'number' },
+  { id: 'wastage_percent', label: 'Wastage %', field: 'wastage_percent', sortable: true, required: false, align: 'right', format: 'percent' },
   { id: 'product_owner_name', label: 'Owner', field: 'product_owner_name', sortable: false, required: false, width: 'max-w-[120px]' },
-  { id: 'data_steward_name', label: 'Data Steward', field: 'data_steward_name', sortable: false, required: false, width: 'max-w-[120px]' },
-  { id: 'it_contact', label: 'IT Contact', field: 'it_contact', sortable: false, required: false, width: 'max-w-[120px]' },
   { id: 'cost_center_primary', label: 'Cost Center', field: 'cost_center_primary', sortable: true, required: false, width: 'max-w-[120px]' },
+  { id: 'contract_expiry_date', label: 'Contract Expiry', field: 'contract_expiry_date', sortable: true, required: false, width: 'max-w-[120px]', format: 'date' },
   { id: 'capabilities', label: 'Capabilities', field: 'capabilities', sortable: false, required: false, width: 'max-w-[200px]' },
   { id: 'short_description', label: 'Description', field: 'short_description', sortable: false, required: false, width: 'max-w-[200px]' },
 ];
 
 // Default visible columns
-const DEFAULT_VISIBLE_COLUMNS = ['title', 'status', 'functional_category', 'vendor', 'deployment_type', 'contract_annual_spend', 'engaged_users', 'product_owner_name'];
+const DEFAULT_VISIBLE_COLUMNS = ['title', 'status', 'functional_category', 'vendor', 'contract_annual_spend', 'engaged_users', 'wastage_percent', 'product_owner_name'];
 
 const emptyAppForm = {
   title: '',
   vendor: '',
-  status: 'under_review',
+  status: 'Active',
   functional_category: '',
-  deployment_type: 'Unknown',
   short_description: '',
   capabilities: '',
   contract_annual_spend: '',

@@ -604,7 +604,7 @@ const InventoryPage = () => {
                   {visibleColumnConfigs.map(column => (
                     <th 
                       key={column.id}
-                      className={`p-4 ${column.align === 'right' ? 'text-right' : column.id === 'deployment_type' ? 'text-center' : 'text-left'} ${column.sortable ? 'cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors' : ''}`}
+                      className={`p-4 ${column.align === 'right' ? 'text-right' : 'text-left'} ${column.sortable ? 'cursor-pointer hover:bg-[var(--glass-highlight)] transition-colors' : ''}`}
                       onClick={() => column.sortable && handleSort(column.field)}
                     >
                       {column.label} {column.sortable && <SortIcon field={column.field} />}

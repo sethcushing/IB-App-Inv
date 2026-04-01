@@ -137,7 +137,6 @@ const DashboardPage = () => {
       search: '',
       status: '',
       functional_category: '',
-      deployment_type: '',
       cost_center: '',
       vendor: ''
     });

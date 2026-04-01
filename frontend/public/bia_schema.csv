@@ -1,0 +1,46 @@
+Field,Type,Required,Description,Sample
+app_id,string (UUID),Auto-generated,Unique identifier,9f2140f2-0b8a-4fbb-b278-d12c520d41f5
+title,string,Yes,Application name (normalized),LinkedIn Sales Navigator
+master_title,string,No,Original application title from import,LinkedIn Sales Navigator
+original_app_id,string,Auto-generated,Lowercase title for matching,linkedin sales navigator
+status,string,Yes,Active or Inactive,Active
+vendor,string,No,Software vendor name,Microsoft
+vendor_parent,string,No,Parent company of vendor,Microsoft Corporation
+functional_category,string,No,Business function category,Sales & CRM
+capabilities,string,No,Application capabilities/features,"CRM, Lead Management, Analytics"
+short_description,string,No,Brief description of the application,Sales prospecting and lead management tool
+data_sources,string,No,Source of the data,Master Software List
+labels,string,No,Custom labels/tags,"Sales, Enterprise"
+notes,string,No,Additional notes,Contract renewal pending
+okta_app_name,string,No,OKTA SSO application name,LinkedIn Sales Navigator SSO
+okta_app_id,string,No,OKTA application ID for SSO mapping,0oa1yt6d8plRQ9IOA0h8
+users_with_sso_access,integer,No,Total users assigned SSO access,279
+users_logging_in_via_sso,integer,No,Users actively logging in via SSO,150
+provisioned_users,integer,No,Total provisioned user licenses,300
+engaged_users,integer,No,Active/engaged users,128
+inactive_users_30d,integer,No,Users inactive for 30+ days,151
+wastage_percent,float,No,Percentage of unused licenses,39.4
+contract_annual_spend,float,No,Current year contract spend,161090.00
+fiscal_ytd_expense_total,float,No,Fiscal year-to-date expenses,161090.00
+prev_fiscal_year_expense_total,float,No,Previous fiscal year expenses,337582.50
+original_po_amount,float,No,Original purchase order amount,500000.00
+contract_expiry_date,date (ISO),No,Contract expiration date,2027-02-27
+cost_center_primary,string,No,Primary cost center/department code,650
+cost_centers,array,No,List of all associated cost centers,"[""650"", ""414""]"
+product_owner_name,string,No,Product owner contact name,John Smith
+business_pm,string,No,Business project manager,Jane Doe
+support_lead,string,No,Support team lead,Mike Johnson
+lead_architect,string,No,Technical lead architect,Sarah Williams
+security_contact,string,No,Security team contact,security@company.com
+legal_contact,string,No,Legal team contact,legal@company.com
+procurement_contact,string,No,Procurement team contact,procurement@company.com
+general_contact,string,No,General contact information,app-support@company.com
+last_updated,datetime (ISO),Auto-generated,Last modification timestamp,2026-04-01T00:02:51.354512+00:00
+--- FUTURE FIELDS ---,,,,
+capability_l1,string,No,Level 1 Capability,Sales Enablement
+capability_l2,string,No,Level 2 Capability,Lead Management
+capability_l3,string,No,Level 3 Capability,Prospecting
+deployment_type,string,No,"On-Prem, Cloud, Hybrid, SaaS",SaaS
+app_type,string,No,"Custom, COTS, Open Source",COTS
+app_tier,string,No,"Tier 1 (Critical), Tier 2, Tier 3",Tier 1
+funding_source,string,No,"CapEx, OpEx, Project-Based",OpEx

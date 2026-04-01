@@ -1,0 +1,356 @@
+{
+  "collection": "applications",
+  "total_records": 397,
+  "fields": {
+    "app_id": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Unique identifier (UUID)",
+      "sample_values": [
+        "8193fb92-9b03-4065-a0f5-9559ec68530d",
+        "67b814e7-1b64-48cf-83dd-d52345da9031",
+        "a936f506-22a2-408c-8703-9fa1c61b2a92"
+      ]
+    },
+    "title": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Application name (normalized)",
+      "sample_values": [
+        "1Password",
+        "3D Systems",
+        "6WINDGate"
+      ]
+    },
+    "master_title": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Original application title from import",
+      "sample_values": [
+        "1Password",
+        "3D Systems",
+        "6WINDGate"
+      ]
+    },
+    "status": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Active or Inactive",
+      "sample_values": [
+        "Inactive",
+        "Active"
+      ]
+    },
+    "vendor": {
+      "type": "str",
+      "populated_count": 98,
+      "populated_percent": 24.7,
+      "description": "Software vendor name",
+      "sample_values": [
+        "AgileBits",
+        "3D Systems",
+        "6Wind"
+      ]
+    },
+    "vendor_parent": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Parent company of vendor",
+      "sample_values": [
+        "AgileBits",
+        "3D Systems",
+        "6Wind"
+      ]
+    },
+    "functional_category": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Business function category (IT, Sales, Security, etc.)",
+      "sample_values": [
+        "Security",
+        "Other",
+        "Sales & CRM"
+      ]
+    },
+    "capabilities": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Application capabilities/features description",
+      "sample_values": []
+    },
+    "short_description": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Brief description of the application",
+      "sample_values": []
+    },
+    "data_sources": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Source of the data (e.g., Master Software List)",
+      "sample_values": [
+        "Master Software List"
+      ]
+    },
+    "labels": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Custom labels/tags",
+      "sample_values": []
+    },
+    "notes": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Additional notes",
+      "sample_values": []
+    },
+    "okta_app_name": {
+      "type": "null",
+      "populated_count": 32,
+      "populated_percent": 8.1,
+      "description": "OKTA SSO application name",
+      "sample_values": [
+        "6sense",
+        "ADP",
+        "Abnormal AI"
+      ]
+    },
+    "okta_app_id": {
+      "type": "null",
+      "populated_count": 32,
+      "populated_percent": 8.1,
+      "description": "OKTA application ID for SSO mapping",
+      "sample_values": [
+        "0oa1yt6d8plRQ9IOA0h8",
+        "0oa1qykeq4kSZz6l00h8",
+        "0oa23j5ygwu31JwB10h8"
+      ]
+    },
+    "users_with_sso_access": {
+      "type": "int",
+      "populated_count": 4,
+      "populated_percent": 1.0,
+      "description": "Total users assigned SSO access",
+      "sample_values": [
+        "1279",
+        "145",
+        "68"
+      ]
+    },
+    "users_logging_in_via_sso": {
+      "type": "int",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Users actively logging in via SSO",
+      "sample_values": []
+    },
+    "provisioned_users": {
+      "type": "int",
+      "populated_count": 4,
+      "populated_percent": 1.0,
+      "description": "Total provisioned user licenses",
+      "sample_values": [
+        "1279",
+        "145",
+        "68"
+      ]
+    },
+    "engaged_users": {
+      "type": "int",
+      "populated_count": 4,
+      "populated_percent": 1.0,
+      "description": "Active/engaged users (SSO users minus inactive)",
+      "sample_values": [
+        "536",
+        "88",
+        "27"
+      ]
+    },
+    "inactive_users_30d": {
+      "type": "int",
+      "populated_count": 4,
+      "populated_percent": 1.0,
+      "description": "Users inactive for 30+ days",
+      "sample_values": [
+        "743",
+        "57",
+        "41"
+      ]
+    },
+    "wastage_percent": {
+      "type": "float",
+      "populated_count": 4,
+      "populated_percent": 1.0,
+      "description": "Percentage of unused licenses",
+      "sample_values": [
+        "51.4",
+        "30.3",
+        "48.5"
+      ]
+    },
+    "contract_annual_spend": {
+      "type": "int",
+      "populated_count": 51,
+      "populated_percent": 12.8,
+      "description": "Current year contract spend",
+      "sample_values": [
+        "19780.55",
+        "55032.32",
+        "75120.15"
+      ]
+    },
+    "fiscal_ytd_expense_total": {
+      "type": "int",
+      "populated_count": 51,
+      "populated_percent": 12.8,
+      "description": "Fiscal year-to-date expenses",
+      "sample_values": [
+        "19780.55",
+        "55032.32",
+        "75120.15"
+      ]
+    },
+    "prev_fiscal_year_expense_total": {
+      "type": "int",
+      "populated_count": 29,
+      "populated_percent": 7.3,
+      "description": "Previous fiscal year total expenses",
+      "sample_values": [
+        "71543.0",
+        "41897.21",
+        "1926.1100000000001"
+      ]
+    },
+    "original_po_amount": {
+      "type": "int",
+      "populated_count": 53,
+      "populated_percent": 13.4,
+      "description": "Original purchase order amount",
+      "sample_values": [
+        "19780.55",
+        "55032.32",
+        "224036.9"
+      ]
+    },
+    "contract_expiry_date": {
+      "type": "null",
+      "populated_count": 53,
+      "populated_percent": 13.4,
+      "description": "Contract expiration date (ISO format)",
+      "sample_values": [
+        "2026-08-02T00:00:00",
+        "2026-07-14T00:00:00",
+        "2027-03-28T00:00:00"
+      ]
+    },
+    "cost_center_primary": {
+      "type": "null",
+      "populated_count": 53,
+      "populated_percent": 13.4,
+      "description": "Primary cost center/department code",
+      "sample_values": [
+        "616",
+        "650",
+        "652"
+      ]
+    },
+    "cost_centers": {
+      "type": "list",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "List of all associated cost centers",
+      "sample_values": [
+        "[]"
+      ]
+    },
+    "product_owner_name": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Product owner contact name",
+      "sample_values": []
+    },
+    "business_pm": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Business project manager",
+      "sample_values": []
+    },
+    "support_lead": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Support team lead",
+      "sample_values": []
+    },
+    "lead_architect": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Technical lead architect",
+      "sample_values": []
+    },
+    "security_contact": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Security team contact",
+      "sample_values": []
+    },
+    "legal_contact": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Legal team contact",
+      "sample_values": []
+    },
+    "procurement_contact": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "Procurement team contact",
+      "sample_values": []
+    },
+    "general_contact": {
+      "type": "null",
+      "populated_count": 0,
+      "populated_percent": 0.0,
+      "description": "General contact information",
+      "sample_values": []
+    },
+    "last_updated": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Last modification timestamp",
+      "sample_values": [
+        "2026-04-01T00:02:51.354512+00:00",
+        "2026-04-01T00:02:51.354603+00:00",
+        "2026-04-01T00:02:51.354664+00:00"
+      ]
+    },
+    "original_app_id": {
+      "type": "str",
+      "populated_count": 100,
+      "populated_percent": 25.2,
+      "description": "Original app identifier from import (lowercase title)",
+      "sample_values": [
+        "1password",
+        "3d systems",
+        "6windgate"
+      ]
+    }
+  }
+}

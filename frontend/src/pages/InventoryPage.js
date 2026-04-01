@@ -332,20 +332,25 @@ const InventoryPage = () => {
       );
     }
     
-    if (column.id === 'deployment_type') {
-      return (
-        <Badge className={`text-xs ${getDeploymentBadgeClass(value)}`}>
-          {value || 'Unknown'}
-        </Badge>
-      );
-    }
-    
     if (column.format === 'currency') {
       return <span className="font-mono">{formatCurrency(value)}</span>;
     }
     
     if (column.format === 'number') {
       return <span className="font-mono">{value || 0}</span>;
+    }
+
+    if (column.format === 'percent') {
+      return <span className="font-mono">{value ? `${Number(value).toFixed(1)}%` : '-'}</span>;
+    }
+
+    if (column.format === 'date') {
+      if (!value) return <span>-</span>;
+      try {
+        return <span className="text-sm">{new Date(value).toLocaleDateString()}</span>;
+      } catch {
+        return <span>-</span>;
+      }
     }
     
     return <span className={`truncate ${column.width || ''}`}>{value || '-'}</span>;

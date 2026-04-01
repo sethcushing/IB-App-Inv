@@ -456,11 +456,11 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Spend by Cost Center - Clickable */}
+        {/* Owner by Department - Clickable */}
         <div className="glass-card p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-heading font-semibold text-theme-primary">Spend by Cost Center</h3>
-            <p className="text-xs text-theme-muted mt-1">Click a bar to view applications</p>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Owner by Department</h3>
+            <p className="text-xs text-theme-muted mt-1">Click a bar to view applications by cost center</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">

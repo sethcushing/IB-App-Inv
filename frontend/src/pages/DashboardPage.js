@@ -7,8 +7,8 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import {
-  Building2, DollarSign, Users, Cloud, Server, HelpCircle, TrendingUp,
-  AlertTriangle, Search, Filter, RefreshCw, ChevronRight, Layers
+  Building2, DollarSign, Users, TrendingUp,
+  AlertTriangle, Search, Filter, RefreshCw, ChevronRight
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';

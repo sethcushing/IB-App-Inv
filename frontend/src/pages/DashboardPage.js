@@ -264,18 +264,6 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Executive Summary */}
-      {executiveSummary && (
-        <div className="glass-card p-4 border-l-4 border-l-green-500 bg-gradient-to-r from-green-500/10 to-transparent">
-          <div className="flex items-start gap-3">
-            <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-theme-secondary leading-relaxed" data-testid="executive-summary">
-              {executiveSummary.summary}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="kpi-card" data-testid="kpi-total-apps">

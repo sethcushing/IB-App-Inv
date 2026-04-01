@@ -550,18 +550,6 @@ const InventoryPage = () => {
             </SelectContent>
           </Select>
 
-          <Select value={filters.deployment_type} onValueChange={(v) => { setFilters({ ...filters, deployment_type: v === 'all' ? '' : v }); setPage(0); }}>
-            <SelectTrigger className="w-[150px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="inventory-deployment-filter">
-              <SelectValue placeholder="Deployment" />
-            </SelectTrigger>
-            <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
-              <SelectItem value="all">All Types</SelectItem>
-              {filterOptions.deployment_types?.map(dt => (
-                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Select value={filters.status} onValueChange={(v) => { setFilters({ ...filters, status: v === 'all' ? '' : v }); setPage(0); }}>
             <SelectTrigger className="w-[140px] bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-secondary" data-testid="inventory-status-filter">
               <SelectValue placeholder="Status" />

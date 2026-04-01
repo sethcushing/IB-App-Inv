@@ -149,7 +149,6 @@ async def get_applications(
     search: Optional[str] = None,
     status: Optional[str] = None,
     functional_category: Optional[str] = None,
-    deployment_type: Optional[str] = None,
     cost_center: Optional[str] = None,
     vendor: Optional[str] = None,
     sort_by: Optional[str] = "title",
@@ -168,8 +167,6 @@ async def get_applications(
         query["status"] = status
     if functional_category:
         query["functional_category"] = functional_category
-    if deployment_type:
-        query["deployment_type"] = deployment_type
     if cost_center:
         query["cost_center_primary"] = cost_center
     if vendor:

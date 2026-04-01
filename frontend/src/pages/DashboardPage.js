@@ -72,7 +72,6 @@ const DashboardPage = () => {
   const [appsByCategory, setAppsByCategory] = useState([]);
   const [spendByCostCenter, setSpendByCostCenter] = useState([]);
   const [highSpendLowEngagement, setHighSpendLowEngagement] = useState([]);
-  const [executiveSummary, setExecutiveSummary] = useState(null);
   const [filterOptions, setFilterOptions] = useState({});
   
   const [filters, setFilters] = useState({

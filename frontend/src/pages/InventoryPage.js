@@ -367,27 +367,8 @@ const InventoryPage = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="under_review">Under Review</SelectItem>
-            <SelectItem value="deprecated">Deprecated</SelectItem>
-            <SelectItem value="retired">Retired</SelectItem>
-            <SelectItem value="unknown">Unknown</SelectItem>
-          </SelectContent>
-        </Select>
-      );
-    }
-    
-    if (column.id === 'deployment_type') {
-      return (
-        <Select value={value || 'Unknown'} onValueChange={(v) => setEditRowData({ ...editRowData, [column.field]: v })}>
-          <SelectTrigger className="h-8 text-xs bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary w-[90px]" onClick={(e) => e.stopPropagation()}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
-            <SelectItem value="Cloud">Cloud</SelectItem>
-            <SelectItem value="On-Prem">On-Prem</SelectItem>
-            <SelectItem value="Hybrid">Hybrid</SelectItem>
-            <SelectItem value="Unknown">Unknown</SelectItem>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
       );

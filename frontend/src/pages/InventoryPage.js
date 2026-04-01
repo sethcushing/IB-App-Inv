@@ -661,7 +661,7 @@ const InventoryPage = () => {
                       {visibleColumnConfigs.map(column => (
                         <td 
                           key={column.id} 
-                          className={`p-4 text-sm ${column.align === 'right' ? 'text-right' : column.id === 'deployment_type' ? 'text-center' : ''} ${column.id === 'title' ? 'font-medium text-theme-primary' : 'text-theme-secondary'} ${column.width || ''}`}
+                          className={`p-4 text-sm ${column.align === 'right' ? 'text-right' : ''} ${column.id === 'title' ? 'font-medium text-theme-primary' : 'text-theme-secondary'} ${column.width || ''}`}
                         >
                           {renderCellValue(app, column)}
                         </td>

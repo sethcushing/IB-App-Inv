@@ -311,15 +311,6 @@ const InventoryPage = () => {
     }
   };
 
-  const getDeploymentBadgeClass = (type) => {
-    switch (type) {
-      case 'Cloud': return 'badge-green';
-      case 'On-Prem': return 'badge-blue';
-      case 'Hybrid': return 'bg-purple-500/15 border-purple-500/30 text-purple-500';
-      default: return 'bg-[var(--glass-highlight)] text-theme-faint border-[var(--glass-border)]';
-    }
-  };
-
   // Render cell value based on column config
   const renderCellValue = (app, column) => {
     const value = app[column.field];

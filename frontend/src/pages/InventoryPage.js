@@ -164,7 +164,6 @@ const InventoryPage = () => {
       search: searchParams.get('search') || '',
       status: searchParams.get('status') || '',
       functional_category: searchParams.get('category') || '',
-      deployment_type: searchParams.get('deployment_type') || '',
       cost_center: searchParams.get('cost_center') || '',
       vendor: searchParams.get('vendor') || ''
     };
@@ -185,7 +184,6 @@ const InventoryPage = () => {
       search: '',
       status: '',
       functional_category: '',
-      deployment_type: '',
       cost_center: '',
       vendor: ''
     });

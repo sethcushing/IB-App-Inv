@@ -68,7 +68,6 @@ class ApplicationUpdate(BaseModel):
     vendor: Optional[str] = None
     labels: Optional[str] = None
     notes: Optional[str] = None
-    deployment_type: Optional[str] = None
     users_with_sso_access: Optional[int] = None
     users_logging_in_via_sso: Optional[int] = None
     provisioned_users: Optional[int] = None

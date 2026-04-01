@@ -150,8 +150,8 @@ const DashboardPage = () => {
     navigate(`/inventory?cost_center=${encodeURIComponent(costCenter)}`);
   };
 
-  const handleDeploymentClick = (deploymentType) => {
-    navigate(`/inventory?deployment_type=${encodeURIComponent(deploymentType)}`);
+  const handleStatusClick = (status) => {
+    navigate(`/inventory?status=${encodeURIComponent(status)}`);
   };
 
   const handleBarClick = (data, chartType) => {
@@ -162,11 +162,11 @@ const DashboardPage = () => {
     }
   };
 
-  const deploymentData = kpis?.deployment_breakdown ? 
-    Object.entries(kpis.deployment_breakdown)
-      .filter(([_, v]) => v > 0)
-      .map(([name, value]) => ({ name, value })) 
-    : [];
+  // Status data for pie chart
+  const statusData = kpis ? [
+    { name: 'Active', value: kpis.active_apps || 0 },
+    { name: 'Inactive', value: kpis.inactive_apps || 0 }
+  ].filter(d => d.value > 0) : [];
 
   if (loading && !kpis) {
     return (

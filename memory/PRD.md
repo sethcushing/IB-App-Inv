@@ -8,7 +8,20 @@ Build a clean, minimal, executive-friendly Systems Inventory application that im
 1. A single-page executive dashboard with rollups (apps, spend, usage, categories, cost centers)
 2. A drill-down inventory list to each application's details
 3. A Request Information workflow to contact the Product Owner/Data Steward
-4. Filtering and segmentation by Cloud vs On-Prem vs Unknown
+4. Active/Inactive application status tracking
+
+## Current Data State (Updated April 2026)
+- **Total Applications**: 397
+- **Active Applications**: 200
+- **Inactive Applications**: 197
+- **Total Contract Spend**: $34.0M
+- **Engaged Users**: 3,325
+
+### Data Sources Merged
+1. **MasterSoftwareList** - Base application list with vendors, OKTA mappings
+2. **OKTA_Engagement_audit** - SSO user counts, engagement metrics, wastage %
+3. **software_renewal_lookup** - Contract expiry dates
+4. **SoftwareSpend** - Financial data, cost centers, PO amounts
 
 ## Core Requirements
 
@@ -17,17 +30,18 @@ Build a clean, minimal, executive-friendly Systems Inventory application that im
 - Auto-detect and map columns to internal schema
 - Handle missing fields with default values
 - Normalize spend fields from currency strings to numeric values
-- Derive 'deployment_type' field (Cloud, On-Prem, Hybrid, Unknown)
+- Active/Inactive status based on spend, renewal dates, and OKTA engagement
 - Duplicate detection when adding new applications
 - Download template CSV functionality
 
 ### User Experience / Pages
-1. **Executive Dashboard**: KPI tiles, charts (Spend by Category, Apps by Category), global filters, Executive Summary
-2. **Inventory List**: Full, sortable, filterable table with Add Application functionality
+1. **Executive Dashboard**: KPI tiles, Active/Inactive counts, charts (Spend by Category, Status Distribution)
+2. **Inventory List**: Full, sortable, filterable table with column customization
 3. **Application Detail Page**: Profile view with tabs (Overview, YoY Trends, Usage, Financials, Ownership, Requests)
-4. **AI Capability Scanner**: Intelligent detection of overlapping application capabilities
-5. **Requests Center**: Inbox for information requests
-6. **Import/Admin**: File upload, field mapping, template download
+4. **AI Portfolio Heatmap**: GPT-4o powered C-Suite analysis of overlaps and consolidation opportunities
+5. **AI Capability Scanner**: Intelligent detection of overlapping application capabilities
+6. **Requests Center**: Inbox for information requests
+7. **Import/Admin**: File upload, field mapping, template download
 
 ## What's Been Implemented
 

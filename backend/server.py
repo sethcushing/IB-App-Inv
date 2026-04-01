@@ -305,7 +305,6 @@ async def get_dashboard_kpis(
     search: Optional[str] = None,
     status: Optional[str] = None,
     functional_category: Optional[str] = None,
-    deployment_type: Optional[str] = None,
     cost_center: Optional[str] = None,
     vendor: Optional[str] = None
 ):
@@ -320,8 +319,6 @@ async def get_dashboard_kpis(
         query["status"] = status
     if functional_category:
         query["functional_category"] = functional_category
-    if deployment_type:
-        query["deployment_type"] = deployment_type
     if cost_center:
         query["cost_center_primary"] = cost_center
     if vendor:
@@ -334,20 +331,17 @@ async def get_dashboard_kpis(
     total_ytd_expense = sum(a.get("fiscal_ytd_expense_total", 0) or 0 for a in apps)
     total_engaged_users = sum(a.get("engaged_users", 0) or 0 for a in apps)
     
-    deployment_counts = {"Cloud": 0, "On-Prem": 0, "Hybrid": 0, "Unknown": 0}
-    for app in apps:
-        dt = app.get("deployment_type", "Unknown")
-        if dt in deployment_counts:
-            deployment_counts[dt] += 1
-        else:
-            deployment_counts["Unknown"] += 1
+    # Count Active vs Inactive
+    active_count = sum(1 for a in apps if a.get("status") == "Active")
+    inactive_count = sum(1 for a in apps if a.get("status") == "Inactive")
     
     return {
         "total_apps": total_apps,
         "total_contract_spend": total_contract_spend,
         "total_ytd_expense": total_ytd_expense,
         "total_engaged_users": total_engaged_users,
-        "deployment_breakdown": deployment_counts
+        "active_apps": active_count,
+        "inactive_apps": inactive_count
     }
 
 @api_router.get("/dashboard/spend-by-category")

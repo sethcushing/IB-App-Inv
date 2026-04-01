@@ -219,9 +219,11 @@ const ApplicationDetailPage = () => {
 
   const getStatusBadgeClass = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved': return 'badge-green';
-      case 'deprecated': case 'retired': return 'badge-red';
-      case 'under_review': case 'in_review': return 'badge-amber';
+      case 'active': return 'bg-green-500/15 border-green-500/30 text-green-500';
+      case 'inactive': return 'bg-amber-500/15 border-amber-500/30 text-amber-500';
+      case 'approved': return 'bg-green-500/15 border-green-500/30 text-green-500';
+      case 'deprecated': case 'retired': return 'bg-red-500/15 border-red-500/30 text-red-500';
+      case 'under_review': case 'in_review': return 'bg-amber-500/15 border-amber-500/30 text-amber-500';
       default: return 'bg-[var(--glass-highlight)] text-theme-muted border-[var(--glass-border)]';
     }
   };

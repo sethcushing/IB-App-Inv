@@ -403,17 +403,17 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Deployment Pie Chart - Clickable */}
+        {/* Status Pie Chart - Clickable */}
         <div className="glass-card p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-heading font-semibold text-theme-primary">Deployment Distribution</h3>
-            <p className="text-xs text-theme-muted mt-1">Click a segment to filter</p>
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Application Status</h3>
+            <p className="text-xs text-theme-muted mt-1">Click a segment to filter by status</p>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={deploymentData}
+                  data={statusData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -423,10 +423,13 @@ const DashboardPage = () => {
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   labelLine={{ stroke: chartColors.labelLine }}
                   cursor="pointer"
-                  onClick={(data) => handleDeploymentClick(data.name)}
+                  onClick={(data) => handleStatusClick(data.name)}
                 >
-                  {deploymentData.map((_, index) => (
-                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  {statusData.map((entry, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={entry.name === 'Active' ? '#22c55e' : '#f59e0b'} 
+                    />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />

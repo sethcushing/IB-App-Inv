@@ -781,14 +781,12 @@ const InventoryPage = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="app-deployment" className="text-theme-secondary">Deployment Type</Label>
-                <Select value={newAppForm.deployment_type} onValueChange={(v) => setNewAppForm({ ...newAppForm, deployment_type: v })}>
-                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary" data-testid="new-app-deployment"><SelectValue /></SelectTrigger>
+                <Label htmlFor="app-status" className="text-theme-secondary">Status</Label>
+                <Select value={newAppForm.status} onValueChange={(v) => setNewAppForm({ ...newAppForm, status: v })}>
+                  <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary" data-testid="new-app-status"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
-                    <SelectItem value="Cloud">Cloud</SelectItem>
-                    <SelectItem value="On-Prem">On-Prem</SelectItem>
-                    <SelectItem value="Hybrid">Hybrid</SelectItem>
-                    <SelectItem value="Unknown">Unknown</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

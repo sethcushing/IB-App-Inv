@@ -302,10 +302,12 @@ const ApplicationDetailPage = () => {
               </div>
               <div className="flex items-center gap-3 mt-2 text-sm text-theme-muted">
                 <span>{app.vendor || 'Unknown Vendor'}</span>
-                <span>•</span>
-                <Badge className={getDeploymentBadgeClass(app.deployment_type)}>
-                  {app.deployment_type || 'Unknown'}
-                </Badge>
+                {app.functional_category && (
+                  <>
+                    <span>•</span>
+                    <span className="text-theme-secondary">{app.functional_category}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>

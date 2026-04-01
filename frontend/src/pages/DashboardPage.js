@@ -93,13 +93,12 @@ const DashboardPage = () => {
         if (value) queryParams.append(key, value);
       });
       
-      const [kpiRes, spendCatRes, appsCatRes, spendCCRes, hsleRes, summaryRes, filtersRes] = await Promise.all([
+      const [kpiRes, spendCatRes, appsCatRes, spendCCRes, hsleRes, filtersRes] = await Promise.all([
         axios.get(`${API}/dashboard/kpis?${queryParams}`),
         axios.get(`${API}/dashboard/spend-by-category`),
         axios.get(`${API}/dashboard/apps-by-category`),
         axios.get(`${API}/dashboard/spend-by-cost-center`),
         axios.get(`${API}/dashboard/high-spend-low-engagement?spend_threshold=${spendThreshold[0]}&engagement_threshold=${engagementThreshold[0]}`),
-        axios.get(`${API}/dashboard/executive-summary`),
         axios.get(`${API}/filters/options`)
       ]);
 
@@ -108,7 +107,6 @@ const DashboardPage = () => {
       setAppsByCategory(appsCatRes.data);
       setSpendByCostCenter(spendCCRes.data);
       setHighSpendLowEngagement(hsleRes.data);
-      setExecutiveSummary(summaryRes.data);
       setFilterOptions(filtersRes.data);
     } catch (error) {
       console.error('Dashboard fetch error:', error);

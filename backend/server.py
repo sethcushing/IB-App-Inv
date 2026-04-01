@@ -525,8 +525,7 @@ async def get_filter_options():
         "statuses": [s for s in statuses if s],
         "categories": [c for c in categories if c],
         "vendors": [v for v in vendors if v],
-        "cost_centers": [c for c in cost_centers if c],
-        "deployment_types": ["Cloud", "On-Prem", "Hybrid", "Unknown"]
+        "cost_centers": [c for c in cost_centers if c]
     }
 
 # ============ AI CAPABILITY SCANNER ============

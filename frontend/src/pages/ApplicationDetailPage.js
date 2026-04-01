@@ -228,15 +228,6 @@ const ApplicationDetailPage = () => {
     }
   };
 
-  const getDeploymentBadgeClass = (type) => {
-    switch (type) {
-      case 'Cloud': return 'badge-green';
-      case 'On-Prem': return 'badge-blue';
-      case 'Hybrid': return 'bg-purple-500/15 border-purple-500/30 text-purple-500';
-      default: return 'bg-[var(--glass-highlight)] text-theme-faint border-[var(--glass-border)]';
-    }
-  };
-
   const getRequestStatusColor = (status) => {
     switch (status) {
       case 'Completed': return 'badge-green';

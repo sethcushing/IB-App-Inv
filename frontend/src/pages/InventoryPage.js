@@ -623,7 +623,7 @@ const InventoryPage = () => {
                       data-testid={`app-row-editing-${app.app_id}`}
                     >
                       {visibleColumnConfigs.map(column => (
-                        <td key={column.id} className={`p-2 ${column.align === 'right' ? 'text-right' : column.id === 'deployment_type' ? 'text-center' : ''}`}>
+                        <td key={column.id} className={`p-2 ${column.align === 'right' ? 'text-right' : ''}`}>
                           {renderEditableCell(column)}
                         </td>
                       ))}

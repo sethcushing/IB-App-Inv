@@ -109,7 +109,6 @@ const InventoryPage = () => {
     search: searchParams.get('search') || '',
     status: searchParams.get('status') || '',
     functional_category: searchParams.get('category') || '',
-    deployment_type: searchParams.get('deployment_type') || '',
     cost_center: searchParams.get('cost_center') || '',
     vendor: searchParams.get('vendor') || ''
   });
@@ -119,7 +118,7 @@ const InventoryPage = () => {
   const [page, setPage] = useState(0);
   const limit = 25;
 
-  const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('deployment_type');
+  const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('status');
 
   // Save column preferences to localStorage
   useEffect(() => {

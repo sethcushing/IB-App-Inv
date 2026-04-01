@@ -335,36 +335,45 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Deployment Breakdown - Clickable */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Cloud', value: kpis?.deployment_breakdown?.Cloud || 0, icon: Cloud, color: 'lime' },
-          { label: 'On-Prem', value: kpis?.deployment_breakdown?.['On-Prem'] || 0, icon: Server, color: 'blue' },
-          { label: 'Hybrid', value: kpis?.deployment_breakdown?.Hybrid || 0, icon: Layers, color: 'purple' },
-          { label: 'Unknown', value: kpis?.deployment_breakdown?.Unknown || 0, icon: HelpCircle, color: 'gray' },
-        ].map(item => (
-          <div 
-            key={item.label} 
-            className="glass-card-hover p-4 cursor-pointer"
-            onClick={() => handleDeploymentClick(item.label)}
-            data-testid={`deployment-${item.label.toLowerCase()}`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                item.color === 'lime' ? 'bg-green-500/20 text-green-400' :
-                item.color === 'blue' ? 'bg-blue-500/20 text-blue-400' :
-                item.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
-                'bg-[var(--glass-highlight)] text-theme-muted'
-              }`}>
-                <item.icon className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold text-theme-primary">{item.value}</p>
-                <p className="text-xs text-theme-muted">{item.label}</p>
-              </div>
+      {/* Active/Inactive Status - Clickable */}
+      <div className="grid grid-cols-2 gap-4">
+        <div 
+          className="glass-card-hover p-5 cursor-pointer"
+          onClick={() => handleStatusClick('Active')}
+          data-testid="status-active"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-theme-muted">Active Applications</p>
+              <p className="text-4xl font-heading font-bold text-green-400 mt-1">
+                {kpis?.active_apps || 0}
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <Building2 className="w-7 h-7 text-green-400" />
             </div>
           </div>
-        ))}
+          <p className="text-xs text-theme-faint mt-2">Click to view active apps</p>
+        </div>
+
+        <div 
+          className="glass-card-hover p-5 cursor-pointer"
+          onClick={() => handleStatusClick('Inactive')}
+          data-testid="status-inactive"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-theme-muted">Inactive Applications</p>
+              <p className="text-4xl font-heading font-bold text-amber-400 mt-1">
+                {kpis?.inactive_apps || 0}
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-7 h-7 text-amber-400" />
+            </div>
+          </div>
+          <p className="text-xs text-theme-faint mt-2">Click to view inactive apps</p>
+        </div>
       </div>
 
       {/* Charts Grid */}

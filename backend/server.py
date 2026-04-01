@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class ApplicationCreate(BaseModel):
     title: str
-    status: Optional[str] = "unknown"
+    status: Optional[str] = "Active"
     functional_category: Optional[str] = None
     capabilities: Optional[str] = None
     short_description: Optional[str] = None
@@ -40,7 +40,6 @@ class ApplicationCreate(BaseModel):
     vendor: Optional[str] = None
     labels: Optional[str] = None
     notes: Optional[str] = None
-    deployment_type: str = "Unknown"
     users_with_sso_access: Optional[int] = 0
     users_logging_in_via_sso: Optional[int] = 0
     provisioned_users: Optional[int] = 0

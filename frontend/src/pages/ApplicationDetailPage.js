@@ -299,6 +299,22 @@ const ApplicationDetailPage = () => {
                     <span className="text-theme-secondary">{app.functional_category}</span>
                   </>
                 )}
+                {app.deployment_model && app.deployment_model !== 'Unknown' && (
+                  <>
+                    <span>•</span>
+                    <Badge className={`text-xs ${
+                      app.deployment_model === 'SaaS' ? 'badge-green' : 
+                      app.deployment_model === 'On-Premise' ? 'badge-blue' : 
+                      'badge-amber'
+                    }`}>{app.deployment_model}</Badge>
+                  </>
+                )}
+                {app.app_type === 'Custom' && (
+                  <>
+                    <span>•</span>
+                    <Badge className="text-xs bg-amber-500/15 border-amber-500/30 text-amber-500">Custom</Badge>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -418,6 +434,59 @@ const ApplicationDetailPage = () => {
                     <p className="text-theme-secondary mt-1">{app.cost_center_primary || '-'}</p>
                   )}
                 </div>
+                <div>
+                  <Label className="text-theme-muted text-xs">Deployment Model</Label>
+                  {editing ? (
+                    <Select value={editForm.deployment_model || ''} onValueChange={(v) => setEditForm({ ...editForm, deployment_model: v })}>
+                      <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary">
+                        <SelectValue placeholder="Select deployment model" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
+                        <SelectItem value="SaaS">SaaS</SelectItem>
+                        <SelectItem value="On-Premise">On-Premise</SelectItem>
+                        <SelectItem value="IaaS/PaaS">IaaS/PaaS</SelectItem>
+                        <SelectItem value="Multiple">Multiple</SelectItem>
+                        <SelectItem value="Unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge data-testid="deployment-model-badge" className={`mt-1 text-xs ${
+                      app.deployment_model === 'SaaS' ? 'badge-green' : 
+                      app.deployment_model === 'On-Premise' ? 'badge-blue' : 
+                      app.deployment_model === 'IaaS/PaaS' ? 'badge-amber' :
+                      'bg-[var(--glass-bg)] text-theme-muted'
+                    }`}>
+                      {app.deployment_model || 'Unknown'}
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-theme-muted text-xs">App Type</Label>
+                  {editing ? (
+                    <Select value={editForm.app_type || ''} onValueChange={(v) => setEditForm({ ...editForm, app_type: v })}>
+                      <SelectTrigger className="mt-1 bg-[var(--glass-highlight)] border-[var(--glass-border)] text-theme-primary">
+                        <SelectValue placeholder="Select app type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[var(--sidebar-bg)] border-[var(--glass-border)]">
+                        <SelectItem value="COTS">COTS</SelectItem>
+                        <SelectItem value="Custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge data-testid="app-type-badge" className={`mt-1 text-xs ${
+                      app.app_type === 'Custom' ? 'bg-amber-500/15 border-amber-500/30 text-amber-500' : 
+                      'badge-green'
+                    }`}>
+                      {app.app_type || 'COTS'}
+                    </Badge>
+                  )}
+                </div>
+                {app.primary_functional_area && (
+                  <div>
+                    <Label className="text-theme-muted text-xs">Functional Area</Label>
+                    <p className="text-theme-secondary mt-1">{app.primary_functional_area}</p>
+                  </div>
+                )}
               </div>
             </div>
 

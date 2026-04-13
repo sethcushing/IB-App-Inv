@@ -57,6 +57,13 @@ class ApplicationCreate(BaseModel):
     legal_contact: Optional[str] = None
     procurement_contact: Optional[str] = None
     general_contact: Optional[str] = None
+    deployment_model: Optional[str] = None
+    app_type: Optional[str] = None
+    is_custom: Optional[bool] = False
+    is_saas: Optional[bool] = False
+    is_on_premise: Optional[bool] = False
+    is_iaas_paas: Optional[bool] = False
+    primary_functional_area: Optional[str] = None
 
 class ApplicationUpdate(BaseModel):
     title: Optional[str] = None
@@ -85,6 +92,13 @@ class ApplicationUpdate(BaseModel):
     legal_contact: Optional[str] = None
     procurement_contact: Optional[str] = None
     general_contact: Optional[str] = None
+    deployment_model: Optional[str] = None
+    app_type: Optional[str] = None
+    is_custom: Optional[bool] = None
+    is_saas: Optional[bool] = None
+    is_on_premise: Optional[bool] = None
+    is_iaas_paas: Optional[bool] = None
+    primary_functional_area: Optional[str] = None
 
 class RequestCreate(BaseModel):
     app_id: str
@@ -151,6 +165,9 @@ async def get_applications(
     functional_category: Optional[str] = None,
     cost_center: Optional[str] = None,
     vendor: Optional[str] = None,
+    deployment_model: Optional[str] = None,
+    app_type: Optional[str] = None,
+    primary_functional_area: Optional[str] = None,
     sort_by: Optional[str] = "title",
     sort_order: Optional[str] = "asc",
     skip: int = 0,
@@ -171,6 +188,12 @@ async def get_applications(
         query["cost_center_primary"] = cost_center
     if vendor:
         query["vendor"] = vendor
+    if deployment_model:
+        query["deployment_model"] = deployment_model
+    if app_type:
+        query["app_type"] = app_type
+    if primary_functional_area:
+        query["primary_functional_area"] = primary_functional_area
     
     sort_direction = 1 if sort_order == "asc" else -1
     
@@ -399,6 +422,47 @@ async def get_users_by_category():
     results = await db.applications.aggregate(pipeline).to_list(10)
     return [{"category": r["_id"], "total_engaged": r["total_engaged"], "total_provisioned": r.get("total_provisioned", 0), "total_sso": r.get("total_sso", 0)} for r in results]
 
+@api_router.get("/dashboard/custom-vs-cots")
+async def get_custom_vs_cots():
+    pipeline = [
+        {"$group": {
+            "_id": {"$ifNull": ["$app_type", "COTS"]},
+            "count": {"$sum": 1},
+            "total_spend": {"$sum": {"$ifNull": ["$contract_annual_spend", 0]}}
+        }},
+        {"$sort": {"count": -1}}
+    ]
+    results = await db.applications.aggregate(pipeline).to_list(10)
+    return [{"type": r["_id"], "count": r["count"], "total_spend": r["total_spend"]} for r in results]
+
+@api_router.get("/dashboard/deployment-model")
+async def get_deployment_model():
+    pipeline = [
+        {"$group": {
+            "_id": {"$ifNull": ["$deployment_model", "Unknown"]},
+            "count": {"$sum": 1},
+            "total_spend": {"$sum": {"$ifNull": ["$contract_annual_spend", 0]}}
+        }},
+        {"$sort": {"count": -1}}
+    ]
+    results = await db.applications.aggregate(pipeline).to_list(10)
+    return [{"model": r["_id"], "count": r["count"], "total_spend": r["total_spend"]} for r in results]
+
+@api_router.get("/dashboard/apps-by-functional-area")
+async def get_apps_by_functional_area():
+    pipeline = [
+        {"$match": {"primary_functional_area": {"$nin": [None, ""]}}},
+        {"$group": {
+            "_id": "$primary_functional_area",
+            "count": {"$sum": 1},
+            "total_spend": {"$sum": {"$ifNull": ["$contract_annual_spend", 0]}}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": 15}
+    ]
+    results = await db.applications.aggregate(pipeline).to_list(15)
+    return [{"area": r["_id"], "count": r["count"], "total_spend": r["total_spend"]} for r in results]
+
 @api_router.get("/dashboard/high-spend-low-engagement")
 async def get_high_spend_low_engagement(
     spend_threshold: float = 50000,
@@ -520,12 +584,18 @@ async def get_filter_options():
     categories = await db.applications.distinct("functional_category")
     vendors = await db.applications.distinct("vendor")
     cost_centers = await db.applications.distinct("cost_center_primary")
+    deployment_models = await db.applications.distinct("deployment_model")
+    app_types = await db.applications.distinct("app_type")
+    functional_areas = await db.applications.distinct("primary_functional_area")
     
     return {
         "statuses": [s for s in statuses if s],
         "categories": [c for c in categories if c],
         "vendors": [v for v in vendors if v],
-        "cost_centers": [c for c in cost_centers if c]
+        "cost_centers": [c for c in cost_centers if c],
+        "deployment_models": [d for d in deployment_models if d],
+        "app_types": [a for a in app_types if a],
+        "functional_areas": [f for f in functional_areas if f]
     }
 
 # ============ AI CAPABILITY SCANNER ============

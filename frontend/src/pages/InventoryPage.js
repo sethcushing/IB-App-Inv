@@ -54,6 +54,9 @@ const ALL_COLUMNS = [
   { id: 'provisioned_users', label: 'Provisioned', field: 'provisioned_users', sortable: true, required: false, align: 'right', format: 'number' },
   { id: 'users_with_sso_access', label: 'SSO Users', field: 'users_with_sso_access', sortable: true, required: false, align: 'right', format: 'number' },
   { id: 'wastage_percent', label: 'Wastage %', field: 'wastage_percent', sortable: true, required: false, align: 'right', format: 'percent' },
+  { id: 'deployment_model', label: 'Deployment', field: 'deployment_model', sortable: true, required: false },
+  { id: 'app_type', label: 'App Type', field: 'app_type', sortable: true, required: false },
+  { id: 'primary_functional_area', label: 'Functional Area', field: 'primary_functional_area', sortable: true, required: false, width: 'max-w-[120px]' },
   { id: 'product_owner_name', label: 'Owner', field: 'product_owner_name', sortable: false, required: false, width: 'max-w-[120px]' },
   { id: 'cost_center_primary', label: 'Cost Center', field: 'cost_center_primary', sortable: true, required: false, width: 'max-w-[120px]' },
   { id: 'contract_expiry_date', label: 'Contract Expiry', field: 'contract_expiry_date', sortable: true, required: false, width: 'max-w-[120px]', format: 'date' },
@@ -62,7 +65,7 @@ const ALL_COLUMNS = [
 ];
 
 // Default visible columns
-const DEFAULT_VISIBLE_COLUMNS = ['title', 'status', 'functional_category', 'vendor', 'contract_annual_spend', 'engaged_users', 'wastage_percent', 'product_owner_name'];
+const DEFAULT_VISIBLE_COLUMNS = ['title', 'status', 'functional_category', 'vendor', 'contract_annual_spend', 'engaged_users', 'deployment_model', 'app_type'];
 
 const emptyAppForm = {
   title: '',
@@ -110,7 +113,10 @@ const InventoryPage = () => {
     status: searchParams.get('status') || '',
     functional_category: searchParams.get('category') || '',
     cost_center: searchParams.get('cost_center') || '',
-    vendor: searchParams.get('vendor') || ''
+    vendor: searchParams.get('vendor') || '',
+    deployment_model: searchParams.get('deployment_model') || '',
+    app_type: searchParams.get('app_type') || '',
+    primary_functional_area: searchParams.get('primary_functional_area') || ''
   });
   
   const [sortBy, setSortBy] = useState('title');
@@ -118,7 +124,7 @@ const InventoryPage = () => {
   const [page, setPage] = useState(0);
   const limit = 25;
 
-  const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('status');
+  const activeUrlFilter = searchParams.get('category') || searchParams.get('cost_center') || searchParams.get('status') || searchParams.get('deployment_model') || searchParams.get('app_type') || searchParams.get('primary_functional_area');
 
   // Save column preferences to localStorage
   useEffect(() => {
@@ -165,7 +171,10 @@ const InventoryPage = () => {
       status: searchParams.get('status') || '',
       functional_category: searchParams.get('category') || '',
       cost_center: searchParams.get('cost_center') || '',
-      vendor: searchParams.get('vendor') || ''
+      vendor: searchParams.get('vendor') || '',
+      deployment_model: searchParams.get('deployment_model') || '',
+      app_type: searchParams.get('app_type') || '',
+      primary_functional_area: searchParams.get('primary_functional_area') || ''
     };
     setFilters(newFilters);
   }, [searchParams]);
@@ -185,7 +194,10 @@ const InventoryPage = () => {
       status: '',
       functional_category: '',
       cost_center: '',
-      vendor: ''
+      vendor: '',
+      deployment_model: '',
+      app_type: '',
+      primary_functional_area: ''
     });
     setSearchParams({});
     setPage(0);

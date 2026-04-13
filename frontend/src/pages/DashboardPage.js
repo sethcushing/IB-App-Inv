@@ -72,6 +72,9 @@ const DashboardPage = () => {
   const [appsByCategory, setAppsByCategory] = useState([]);
   const [spendByCostCenter, setSpendByCostCenter] = useState([]);
   const [highSpendLowEngagement, setHighSpendLowEngagement] = useState([]);
+  const [customVsCots, setCustomVsCots] = useState([]);
+  const [deploymentModel, setDeploymentModel] = useState([]);
+  const [appsByFunctionalArea, setAppsByFunctionalArea] = useState([]);
   const [filterOptions, setFilterOptions] = useState({});
   
   const [filters, setFilters] = useState({
@@ -92,13 +95,16 @@ const DashboardPage = () => {
         if (value) queryParams.append(key, value);
       });
       
-      const [kpiRes, spendCatRes, appsCatRes, spendCCRes, hsleRes, filtersRes] = await Promise.all([
+      const [kpiRes, spendCatRes, appsCatRes, spendCCRes, hsleRes, filtersRes, customRes, deployRes, funcAreaRes] = await Promise.all([
         axios.get(`${API}/dashboard/kpis?${queryParams}`),
         axios.get(`${API}/dashboard/spend-by-category`),
         axios.get(`${API}/dashboard/apps-by-category`),
         axios.get(`${API}/dashboard/spend-by-cost-center`),
         axios.get(`${API}/dashboard/high-spend-low-engagement?spend_threshold=${spendThreshold[0]}&engagement_threshold=${engagementThreshold[0]}`),
-        axios.get(`${API}/filters/options`)
+        axios.get(`${API}/filters/options`),
+        axios.get(`${API}/dashboard/custom-vs-cots`),
+        axios.get(`${API}/dashboard/deployment-model`),
+        axios.get(`${API}/dashboard/apps-by-functional-area`)
       ]);
 
       setKpis(kpiRes.data);
@@ -107,6 +113,9 @@ const DashboardPage = () => {
       setSpendByCostCenter(spendCCRes.data);
       setHighSpendLowEngagement(hsleRes.data);
       setFilterOptions(filtersRes.data);
+      setCustomVsCots(customRes.data);
+      setDeploymentModel(deployRes.data);
+      setAppsByFunctionalArea(funcAreaRes.data);
     } catch (error) {
       console.error('Dashboard fetch error:', error);
       toast.error('Failed to load dashboard data');
@@ -361,7 +370,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Charts Grid */}
+      {/* Charts Grid - Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spend by Category - Clickable */}
         <div className="glass-card p-6">
@@ -419,6 +428,101 @@ const DashboardPage = () => {
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Deployment Model - Pie Chart */}
+        <div className="glass-card p-6" data-testid="chart-deployment-model">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Deployment Model</h3>
+            <p className="text-xs text-theme-muted mt-1">SaaS vs On-Premise vs IaaS/PaaS</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={deploymentModel.map(d => ({ name: d.model, value: d.count }))}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={{ stroke: chartColors.labelLine }}
+                  cursor="pointer"
+                  onClick={(data) => navigate(`/inventory?deployment_model=${encodeURIComponent(data.name)}`)}
+                >
+                  {deploymentModel.map((_, index) => (
+                    <Cell key={index} fill={['#60a5fa', '#818cf8', '#fbbf24', '#14b8a6', '#f87171'][index % 5]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend 
+                  wrapperStyle={{ fontSize: '12px', color: chartColors.tick }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Custom vs COTS - Pie Chart */}
+        <div className="glass-card p-6" data-testid="chart-custom-vs-cots">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Custom vs COTS</h3>
+            <p className="text-xs text-theme-muted mt-1">Custom-built vs Commercial Off-The-Shelf</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={customVsCots.map(d => ({ name: d.type, value: d.count }))}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={{ stroke: chartColors.labelLine }}
+                  cursor="pointer"
+                  onClick={(data) => navigate(`/inventory?app_type=${encodeURIComponent(data.name)}`)}
+                >
+                  {customVsCots.map((entry, index) => (
+                    <Cell key={index} fill={entry.type === 'Custom' ? '#f59e0b' : '#22c55e'} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend 
+                  wrapperStyle={{ fontSize: '12px', color: chartColors.tick }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Apps by Functional Area - Bar Chart */}
+        <div className="glass-card p-6" data-testid="chart-functional-area">
+          <div className="mb-4">
+            <h3 className="text-lg font-heading font-semibold text-theme-primary">Apps by Functional Area</h3>
+            <p className="text-xs text-theme-muted mt-1">Primary business function served</p>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={appsByFunctionalArea} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: chartColors.tick }} />
+                <YAxis dataKey="area" type="category" tick={{ fontSize: 11, fill: chartColors.tick }} width={90} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar 
+                  dataKey="count" 
+                  fill="#818cf8" 
+                  radius={[0, 6, 6, 0]} 
+                  cursor="pointer"
+                  onClick={(data) => navigate(`/inventory?primary_functional_area=${encodeURIComponent(data.area)}`)}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -535,7 +639,7 @@ const DashboardPage = () => {
                   <th className="text-left p-4">Category</th>
                   <th className="text-right p-4">Annual Spend</th>
                   <th className="text-right p-4">Engaged Users</th>
-                  <th className="text-center p-4">Deployment</th>
+                  <th className="text-center p-4">Model</th>
                   <th className="text-center p-4"></th>
                 </tr>
               </thead>
@@ -560,11 +664,12 @@ const DashboardPage = () => {
                     </td>
                     <td className="p-4 text-center">
                       <Badge className={`text-xs ${
-                        app.deployment_type === 'Cloud' ? 'badge-green' : 
-                        app.deployment_type === 'On-Prem' ? 'badge-blue' : 
+                        app.deployment_model === 'SaaS' ? 'badge-green' : 
+                        app.deployment_model === 'On-Premise' ? 'badge-blue' : 
+                        app.deployment_model === 'IaaS/PaaS' ? 'badge-amber' :
                         'bg-[var(--glass-bg)] text-theme-muted'
                       }`}>
-                        {app.deployment_type}
+                        {app.deployment_model || 'Unknown'}
                       </Badge>
                     </td>
                     <td className="p-4 text-center">

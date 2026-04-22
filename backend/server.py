@@ -1094,6 +1094,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve React static files in production (when build exists)
+from starlette.staticfiles import StaticFiles
+from starlette.responses import FileResponse
+
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir / "static")), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_react(full_path: str):
+        """Serve React app for all non-API routes"""
+        file_path = static_dir / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(static_dir / "index.html"))
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()

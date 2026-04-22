@@ -1,0 +1,14 @@
+node_modules
+frontend/node_modules
+frontend/build
+backend/__pycache__
+backend/tests
+backend/master_update.xlsx
+backend/merge_master_update.py
+.git
+.emergent
+test_reports
+memory
+*.json
+*.csv
+*.md

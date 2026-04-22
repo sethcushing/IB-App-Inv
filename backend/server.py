@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import json
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -21,12 +22,47 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# App password (for gate access)
+APP_PASSWORD = os.environ.get('APP_PASSWORD', 'CompassX')
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# ============ AUTH ============
+
+class PasswordVerify(BaseModel):
+    password: str
+
+@api_router.post("/auth/verify")
+async def verify_password(body: PasswordVerify):
+    if body.password == APP_PASSWORD:
+        return {"authenticated": True}
+    raise HTTPException(status_code=401, detail="Invalid password")
+
+# ============ ADMIN SEED ============
+
+@api_router.post("/admin/seed-production")
+async def seed_production_data():
+    """Seed the database from bundled seed_data.json if empty"""
+    count = await db.applications.count_documents({})
+    if count > 0:
+        return {"message": f"Database already has {count} applications. Skipping seed.", "seeded": False}
+    
+    seed_file = ROOT_DIR / "seed_data.json"
+    if not seed_file.exists():
+        raise HTTPException(status_code=404, detail="Seed data file not found")
+    
+    with open(seed_file) as f:
+        apps = json.load(f)
+    
+    if apps:
+        await db.applications.insert_many(apps)
+    
+    return {"message": f"Seeded {len(apps)} applications", "seeded": True}
 
 # ============ MODELS ============
 
@@ -1109,6 +1145,23 @@ if static_dir.exists():
         if file_path.exists() and file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(static_dir / "index.html"))
+
+@app.on_event("startup")
+async def auto_seed():
+    """Auto-seed database on startup if empty"""
+    count = await db.applications.count_documents({})
+    if count == 0:
+        seed_file = ROOT_DIR / "seed_data.json"
+        if seed_file.exists():
+            with open(seed_file) as f:
+                apps = json.load(f)
+            if apps:
+                await db.applications.insert_many(apps)
+            logger.info(f"Auto-seeded {len(apps)} applications into empty database")
+        else:
+            logger.warning("Database is empty and no seed_data.json found")
+    else:
+        logger.info(f"Database already has {count} applications")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

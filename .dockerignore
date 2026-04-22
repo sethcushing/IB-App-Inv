@@ -9,6 +9,10 @@ backend/merge_master_update.py
 .emergent
 test_reports
 memory
-*.json
-*.csv
-*.md
+bia_schema.json
+bia_schema.csv
+bia_applications_export.csv
+design_guidelines.json
+test_result.md
+backend_test.py
+tests

@@ -1,8 +1,9 @@
 # Stage 1: Build React frontend
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
-COPY frontend/package.json frontend/yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY frontend/package.json ./
+COPY frontend/yarn.lock* ./
+RUN yarn install --frozen-lockfile || yarn install
 COPY frontend/ ./
 ENV REACT_APP_BACKEND_URL=
 RUN yarn build
